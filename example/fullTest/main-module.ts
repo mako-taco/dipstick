@@ -1,9 +1,10 @@
 import { dip } from "dipstick";
 import { Foo, FooDep, IFoo } from "./Foo";
 import { Bar, BarDep } from "./Bar";
+import { Baz, FooBaz } from "Baz";
 
 export type MainModule = dip.Module<{
-  dependencies: [FooDependencyModule];
+  dependencies: [FooDependencyModule, BarDependencyModule];
   bindings: {
     reusableIfoo: dip.Bind.Reusable<Foo, IFoo>;
     transientFoo: dip.Bind.Transient<Foo>;
@@ -13,9 +14,12 @@ export type MainModule = dip.Module<{
 
 export type ChildModule = dip.Module<{
   parent: MainModule;
-  dependencies: [BarDependencyModule];
+  dependencies: [BarDependencyModule]; // can only have dependencies that exist in the parent module
   provided: {
-    bar: dip.Bind.Reusable<Bar>;
+    baz: dip.Bind.Transient<Baz>;
+  };
+  bindings: {
+    fooBaz: dip.Bind.Transient<FooBaz>;
   };
 }>;
 

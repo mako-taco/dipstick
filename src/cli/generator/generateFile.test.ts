@@ -128,9 +128,9 @@ describe("generateFile", () => {
       expect(text).toContain("transientBinding(): Foo");
     });
 
-    it("should generate children binding methods which take the parent and child dependencies as parameters", () => {
+    it("should generate children binding methods which take the child's provided bindings as parameters", () => {
       expect(text).toContain(
-        "moduleBinding(parent: TestModule, dependency3: Dependency3): ChildModule"
+        "moduleBinding(providedValue: string): ChildModule"
       );
     });
   });

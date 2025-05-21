@@ -75,7 +75,12 @@ export function generateFile({
       structure.getProperty("provided")?.getType().getProperties() || [];
     const bindings =
       structure.getProperty("bindings")?.getType().getProperties() || [];
-    const { methods, properties: cacheProperties } = generateMethods(bindings);
+    const { methods, properties: cacheProperties } = generateMethods({
+      bindings,
+      dependencies,
+      parent,
+      provided,
+    });
     // Generate class implementation
     const addedClass = generatedSourceFile.addClass({
       name: `${moduleName}_Impl`,
@@ -110,7 +115,7 @@ export function generateFile({
             ...provided.map(
               (prop) =>
                 ({
-                  name: prop.getName(),
+                  name: `_${prop.getName()}`,
                   type: prop.getValueDeclarationOrThrow().getType().getText(),
                   isReadonly: true,
                   scope: Scope.Private,

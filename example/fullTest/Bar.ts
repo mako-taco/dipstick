@@ -1,4 +1,4 @@
-import { FooDep } from "./Foo";
+import { FooDep, IFoo } from "./Foo";
 
 export interface IBar {
   doSomething(): void;
@@ -9,6 +9,6 @@ export class BarDep {
 }
 
 export class Bar implements IBar {
-  constructor(private a: FooDep, private b: BarDep) {}
+  constructor(private a: IFoo, private b: BarDep) {}
   doSomething() {}
 }

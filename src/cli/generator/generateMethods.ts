@@ -4,14 +4,39 @@ import {
   OptionalKind,
   Symbol as TsMorphSymbol,
   PropertyDeclarationStructure,
+  Type,
+  TypeNode,
 } from "ts-morph";
+import { getClassInstantiationText } from "./getClassInstantiationText";
 
-export function generateMethods(bindings: TsMorphSymbol[]): {
+export function generateMethods({
+  bindings,
+  provided,
+  parent,
+  dependencies,
+}: {
+  bindings: TsMorphSymbol[];
+  provided: TsMorphSymbol[];
+  parent?: Type;
+  dependencies: TypeNode[];
+}): {
   methods: OptionalKind<MethodDeclarationStructure>[];
   properties: OptionalKind<PropertyDeclarationStructure>[];
 } {
   const methods: OptionalKind<MethodDeclarationStructure>[] = [];
   const properties: OptionalKind<PropertyDeclarationStructure>[] = [];
+
+  for (const dep of provided) {
+    const name = dep.getName();
+    const type = dep.getValueDeclarationOrThrow().getType();
+    const typeString = type.getText();
+
+    methods.push({
+      name,
+      returnType: typeString,
+      statements: [`return this._${name};`],
+    });
+  }
 
   for (const binding of bindings) {
     const name = binding.getName();
@@ -39,7 +64,13 @@ export function generateMethods(bindings: TsMorphSymbol[]): {
         returnType: typeString,
         statements: [
           `if (!this._${name}) {`,
-          `  this._${name} = new ${implType}();`,
+          `  this._${name} = ${getClassInstantiationText({
+            type: implType,
+            bindings,
+            provided,
+            parent,
+            dependencies,
+          })};`,
           `}`,
           `return this._${name};`,
         ],
@@ -52,7 +83,10 @@ export function generateMethods(bindings: TsMorphSymbol[]): {
       methods.push({
         name,
         returnType: typeString,
-        statements: [`return new ${implType}();`],
+        // TODO: resolve dependencies of the constructor
+        statements: [
+          `return ${getClassInstantiationText({ type: implType })};`,
+        ],
       });
     } else if (bindingKind === "Module") {
       const [, childType] = bindingTypeArgs;
