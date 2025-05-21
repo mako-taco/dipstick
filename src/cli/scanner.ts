@@ -1,78 +1,89 @@
-import { Project } from "ts-morph";
+import {
+  Project,
+  TypeAliasDeclaration,
+  TypeReferenceNode,
+  Node,
+} from "ts-morph";
+import { ILogger } from "./logger";
 
-export type FoundType =
-  | {
-      kind: "module";
-      filePath: string;
-      interfaceName: string;
-      dependencies: string[];
-    }
-  | {
-      kind: "component";
-      filePath: string;
-      interfaceName: string;
-      dependencies: string[];
-    };
-
-export function scanForModules(
-  tsConfigFilePath: string,
-  verbose = false
-): FoundType[] {
-  const project = new Project({ tsConfigFilePath });
-  const found: FoundType[] = [];
-
-  for (const sourceFile of project.getSourceFiles()) {
-    for (const iface of sourceFile.getInterfaces()) {
-      if (!iface.isExported()) continue;
-      const moduleExt = iface
-        .getExtends()
-        .find((e) => e.getText().startsWith("Module"));
-      if (moduleExt) {
-        const dependencies = extractDependencies(moduleExt.getText());
-        found.push({
-          kind: "module",
-          filePath: sourceFile.getFilePath(),
-          interfaceName: iface.getName(),
-          dependencies,
-        });
-        if (verbose) {
-          console.log(
-            `[scan] Found module interface: ${iface.getName()} in ${sourceFile.getFilePath()} with dependencies: [${dependencies.join(
-              ", "
-            )}]`
-          );
-        }
-      }
-      const componentExt = iface
-        .getExtends()
-        .find((e) => e.getText().startsWith("Component"));
-      if (componentExt) {
-        const dependencies = extractDependencies(componentExt.getText());
-        found.push({
-          kind: "component",
-          filePath: sourceFile.getFilePath(),
-          interfaceName: iface.getName(),
-          dependencies,
-        });
-        if (verbose) {
-          console.log(
-            `[scan] Found component interface: ${iface.getName()} in ${sourceFile.getFilePath()} with dependencies: [${dependencies.join(
-              ", "
-            )}]`
-          );
-        }
-      }
-    }
-  }
-  return found;
+export interface FoundModule {
+  name: string;
+  filePath: string;
+  typeAlias: TypeAliasDeclaration;
 }
 
-function extractDependencies(extText: string): string[] {
-  // e.g. Module<[FooModule, BarModule]> or Component<[FooModule, BarModule]>
-  const match = extText.match(/\w+<\s*\[([^\]]*)\]/);
-  if (!match) return [];
-  return match[1]
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
+export interface IScanner {
+  scan(): FoundModule[];
+}
+
+export class Scanner implements IScanner {
+  constructor(
+    private readonly project: Project,
+    private readonly logger: ILogger
+  ) {}
+  scan(): FoundModule[] {
+    const sourceFiles = this.project.getSourceFiles();
+    const foundModules: FoundModule[] = [];
+
+    for (const sourceFile of sourceFiles) {
+      // Skip declaration files and node_modules
+      if (
+        sourceFile.isDeclarationFile() ||
+        sourceFile.getFilePath().includes("node_modules")
+      ) {
+        continue;
+      }
+
+      const dipstickImport = sourceFile.getImportDeclaration("dipstick");
+      if (!dipstickImport) {
+        this.logger.debug(
+          `Skipping ${sourceFile.getFilePath()}: (No dipstick import found)`
+        );
+        continue;
+      }
+
+      const namespaceImport = dipstickImport
+        .getNamedImports()
+        .find((ni) => ni.getName() === "dip");
+      if (!namespaceImport) {
+        this.logger.debug(
+          `Skipping ${sourceFile.getFilePath()}: (No dip namespace import found)`
+        );
+        continue;
+      }
+
+      // Get all type aliases in the file
+      const typeAliases = sourceFile.getTypeAliases();
+
+      for (const typeAlias of typeAliases) {
+        const typeNode = typeAlias.getTypeNode();
+
+        // Check if this is a type reference (e.g., dip.Module<...>)
+        if (typeNode && Node.isTypeReference(typeNode)) {
+          const typeName = typeNode.getTypeName().getText();
+
+          // Check if it's a dip.Module type
+          if (typeName === "dip.Module") {
+            // Skip non-exported type aliases
+            if (!typeAlias.isExported()) {
+              this.logger.debug(
+                `Skipping ${sourceFile.getFilePath()} ${typeAlias.getName()}: (Not exported)`
+              );
+              continue;
+            }
+            this.logger.log(
+              `Found module ${typeAlias.getName()} in ${sourceFile.getFilePath()}`
+            );
+            foundModules.push({
+              name: typeAlias.getName(),
+              filePath: sourceFile.getFilePath(),
+              typeAlias,
+            });
+          }
+        }
+      }
+    }
+
+    return foundModules;
+  }
 }

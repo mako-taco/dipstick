@@ -1,15 +1,6 @@
-# Dipstick
+`# Dipstick
 
-Dependency injection framework built for typescript. No decorators or special symbols required!
-
-## Features
-
-- 🔒 **Type-safe** - Full TypeScript support with type checking
-- 🏗️ **Code Generation** - Automatically generates implementations
-- 📦 **Module-based** - Organize dependencies into modules
-- 🧩 **Component-based** - Build components that depend on modules
-- 🔄 **Lifecycle Management** - Support for both reusable and transient instances
-- 🛠️ **CLI Tool** - Easy to use command-line interface
+A dependency injection framework for TypeScript that uses code generation to create type-safe dependency injection containers.
 
 ## Installation
 
@@ -17,136 +8,176 @@ Dependency injection framework built for typescript. No decorators or special sy
 npm install dipstick
 ```
 
-## Quick Start
+## Overview
 
-1. Define your modules:
+Dipstick uses TypeScript's type system and code generation to create dependency injection containers. The framework is designed to be type-safe and easy to use, with a focus on maintainability and developer experience.
 
-```typescript
-import { Module, Bind } from "dipstick";
-
-export interface UserModule extends Module {
-  userService: Bind<typeof UserService, IUserService>;
-  userRepository: Bind<typeof UserRepository, IUserRepository>;
-}
-```
-
-2. Define your components:
-
-```typescript
-import { Component, Reusable, Transient } from "dipstick";
-
-export interface UserComponent extends Component<[UserModule]> {
-  getUser(): Reusable<IUser>;
-  createUser(): Transient<IUser>;
-}
-```
-
-3. Generate implementations:
-
-```bash
-npx codegen ./tsconfig.json
-```
-
-## Key Concepts
+## Core Concepts
 
 ### Modules
 
-Modules are the building blocks of your dependency injection system. They define what can be created and how to create it.
+Modules are the core building blocks of Dipstick. They allow you to bind implementations to types that are used throughout your project. To create a module, export a type alias to `dip.Module`:
 
 ```typescript
-export interface DatabaseModule extends Module {
-  connection: Bind<typeof DatabaseConnection, IDatabaseConnection>;
-  queryBuilder: Bind<typeof QueryBuilder, IQueryBuilder>;
-}
+import { dip } from "dipstick";
+
+interface IFoo {}
+class Foo implements IFoo {}
+
+export type MyModule = dip.Module<{
+  bindings: {
+    foo: dip.Bind.Reusable<Foo, IFoo>;
+  };
+}>;
 ```
 
-#### Bind
+### Bindings
 
-The `Bind` type is used to define how to create instances within modules. It takes one to two type parameters:
+Dipstick supports three types of bindings:
 
-1. The constructor type
-2. (Optional) The interface type. If none is provided, this is the inferred from the constructor type
+#### Reusable Bindings
+
+Reusable bindings return the same instance every time they are called. This is useful for singletons or other objects that should only be created once per module:
 
 ```typescript
-interface MyModule extends Module {
-  myServiceInterface: Bind<typeof MyService, IMyService>;
-  myService: Bind<typeof Myservice>;
-}
+export type MyModule = dip.Module<{
+  bindings: {
+    // Returns the same Foo instance every time
+    foo: dip.Bind.Reusable<Foo, IFoo>;
+  };
+}>;
 ```
 
-#### Disambiguating Duplicated Types
+#### Transient Bindings
 
-While most dependency injection frameworks support things like using `@Named("blah")` to handle this situation, Dipstik is a little different. Simply create a new type with a descriptive name that can wrap the type you want to return:
+Transient bindings return a new instance every time they are called. This is useful for objects that should be created fresh each time they are requested:
 
 ```typescript
-interface RateLimiter {
-  isRateLimited(): boolean;
-}
-
-// Create some monads
-type Service1<T> = T;
-type Service2<T> = T;
-
-// Use the monads to describe your intent
-interface MyModule extends Module {
-  service1RateLimiter: Bind<typeof RateLimiter, Service1<RateLimiter>>;
-  service2RateLimiter: Bind<typeof RateLimiter, Service2<RateLimiter>>;
-}
+export type MyModule = dip.Module<{
+  bindings: {
+    // Returns a new Bar instance every time
+    bar: dip.Bind.Transient<Bar>;
+  };
+}>;
 ```
 
-### Components
+#### Module Bindings
 
-Components depend on modules and provide the ability to declare lifetimes for your dependencies. They can request both reusable (singleton) and transient (new instance each time) dependencies.
-
-Create a new component by exporting an interface which extends `Component`.
+Module bindings are used to create child modules. A child module will use its parent to resolve dependencies that it cannot resolve itself:
 
 ```typescript
-export interface UserComponent extends Component<...> {
-    ...
-}
+// Parent module
+export type ParentModule = dip.Module<{
+  bindings: {
+    foo: dip.Bind.Reusable<Foo>;
+  };
+}>;
+
+// Child module
+export type ChildModule = dip.Module<{
+  parent: ParentModule;
+  bindings: {
+    bar: dip.Bind.Transient<Bar>;
+  };
+}>;
+
+// Module that can create child modules
+export type ModuleFactory = dip.Module<{
+  bindings: {
+    createChild: dip.Bind.Module<ParentModule, ChildModule>;
+  };
+}>;
 ```
 
-#### Depending on Modules
+### Dependencies
 
-The modules that a Component depends on are listed out in its type argument. Modules are used to create dependencies within the component whenever a new one is requested. In this example, our component depends on both `Module1` and `Module2`:
+Modules can depend on other modules. These dependencies are used to resolve types that the module cannot resolve itself:
 
 ```typescript
-export interface UserComponent extends Component<[Module1, Module2]> {
-  getSomethingFromModule1(): IModule1Thing;
-  getSomethingFromModule2(): IModule2Thing;
-  getSomethingElseFromModule2(): AnotherModule2Thing;
+class Foo {
+  constructor(bar: Bar) {}
 }
+
+export type FooModule = dip.Module<{
+  bindings: {
+    foo: dip.Bind.Reusable<Foo>;
+  };
+}>;
+
+export type BarModule = dip.Module<{
+  dependencies: [FooModule];
+  bindings: {
+    bar: dip.Bind.Transient<Bar>;
+  };
+}>;
 ```
 
-#### Reusable vs Transient
+### Provided Dependencies
 
-Components can reuse created instances. To make use of this feature, wrap a component's return value in `Reusable`. By not including `Reusable` (or explicitly including `Transient`), the generated code will always return a new instance whenever one is requested.
+Modules can have dependencies that are provided at construction time. This is useful for creating scoped modules, such as request-scoped modules in a web application:
 
-- `Reusable<T>` - Returns the same instance every time (singleton)
-- `Transient<T>` - Returns a new instance every time
+```typescript
+export type MainModule = dip.Module<{
+  bindings: {
+    foo: dip.Bind.Reusable<Foo>;
+    requestModule: dip.Bind.Module<MainModule, RequestModule>;
+  };
+}>;
 
-## CLI Usage
+export class RequestHandler {
+  constructor(request: Request, response: Response);
 
-```bash
-# Generate implementations for all modules and components
-npx codegen ./tsconfig.json
+  run() {
+    response.send(200, request.headers["content-length"]);
+  }
+}
 
-# Verbose output
-npx codegen ./tsconfig.json --verbose
+// Request-scoped module which is a child of MainModule
+export type RequestModule = dip.Module<{
+  parent: MainModule;
+  provided: {
+    request: Request;
+    response: Response;
+  };
+  bindings: {
+    // Can use the request object to create request-scoped services
+    user: dip.Bind.Reusable<User>;
+    handler: dip.Bind.Reusable<RequestHandler>;
+  };
+}>;
+
+// Now when you get a request, create the child module
+const mainModule = new MainModule();
+app.use((request: Request, response: Response) => {
+  const handler = mainModule.requestModule({ request, response }).handler();
+  handler.run();
+});
 ```
 
-## Caveats
+## Usage
 
-This project was 100% vibe coded over the course of a day. There are likely serious problems with it, such as the code being an unreadable mess of branching control flow. This will be addressed in future versions.
+1. Define your modules using type aliases to `dip.Module`
+2. Run the code generator:
+   ```bash
+   npm exec dipstick generate ./path/to/tsconfig.json
+   ```
+3. Use the generated modules in your application:
+   ```typescript
+   const parentModule = new ParentModule_Impl();
+   const requestModule = parentModule.createRequestModule(new Request());
+   const service = requestModule.requestService();
+   ```
 
-## Example
+## Code Generation
 
-See the [example](./example) directory for a complete working example.
+The code generator will:
+
+1. Scan your TypeScript files for exported module type aliases
+2. Generate implementation classes for each module
+3. Handle dependency injection and binding resolution
+4. Ensure type safety throughout the dependency graph
 
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-MIT
+`
