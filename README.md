@@ -117,20 +117,17 @@ export type BarModule = dip.Module<{
 Modules can have dependencies that are provided at construction time. This is useful for creating scoped modules, such as request-scoped modules in a web application:
 
 ```typescript
+export type SomeOtherModule = dip.Module<{
+  bindings: dip.bind.Transient<Bar, IBar>
+}>;
+
 export type MainModule = dip.Module<{
+  dependencies: [SomeOtherModule]
   bindings: {
     foo: dip.Bind.Reusable<Foo>;
     requestModule: dip.Bind.Module<MainModule, RequestModule>;
   };
 }>;
-
-export class RequestHandler {
-  constructor(request: Request, response: Response);
-
-  run() {
-    response.send(200, request.headers["content-length"]);
-  }
-}
 
 // Request-scoped module which is a child of MainModule
 export type RequestModule = dip.Module<{
@@ -146,8 +143,18 @@ export type RequestModule = dip.Module<{
   };
 }>;
 
+
+// A class that does things with objects from the request scope
+export class RequestHandler {
+  constructor(request: Request, response: Response);
+
+  run() {
+    response.send(200, request.headers["content-length"]);
+  }
+}
+
 // Now when you get a request, create the child module
-const mainModule = new MainModule();
+const mainModule = new MainModule_Impl();
 app.use((request: Request, response: Response) => {
   const handler = mainModule.requestModule({ request, response }).handler();
   handler.run();
