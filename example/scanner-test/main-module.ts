@@ -1,24 +1,20 @@
 import { dip } from "dipstick";
 import { Foo, FooDep, IFoo } from "./Foo";
-import { Bar, BarDep } from "./Bar";
-import { Baz, FooBaz } from "Baz";
+import { BarDep } from "./Bar";
+import { Baz, FooBaz } from "./Baz";
 
 export type MainModule = dip.Module<{
   dependencies: [FooDependencyModule, BarDependencyModule];
   bindings: {
     reusableIfoo: dip.Bind.Reusable<Foo, IFoo>;
     transientFoo: dip.Bind.Transient<Foo>;
-    childModule: dip.Bind.Module<MainModule, ChildModule>;
   };
 }>;
 
 export type ChildModule = dip.Module<{
-  parent: MainModule;
-  dependencies: [BarDependencyModule]; // can only have dependencies that exist in the parent module
-  provided: {
-    baz: dip.Bind.Transient<Baz>;
-  };
+  dependencies: [MainModule, BarDependencyModule]; // can only have dependencies that exist in the parent module
   bindings: {
+    baz: dip.Bind.Static<Baz>;
     fooBaz: dip.Bind.Transient<FooBaz>;
   };
 }>;

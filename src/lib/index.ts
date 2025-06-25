@@ -1,14 +1,17 @@
 export namespace dip {
-  type GetProvided<Structure extends ModuleStructure<Module[], Module>> =
-    Structure["provided"];
   type GetBindings<Structure extends ModuleStructure<Module[], Module>> =
     Structure["bindings"];
-  type GetDependencies<Structure extends ModuleStructure<Module[], Module>> =
-    Structure["dependencies"] extends unknown[]
-      ? Structure["dependencies"]
-      : never;
-  type GetAllMethods<Structure extends ModuleStructure<Module[], Module>> =
-    GetProvided<Structure> & GetBindings<Structure>;
+
+  type GetStaticBindings<Structure extends ModuleStructure<Module[], Module>> =
+    {
+      [K in keyof GetBindings<Structure>]: GetBindings<Structure>[K] extends Bind.Static<
+        infer T
+      >
+        ? Bind.Static<T>
+        : never;
+    };
+
+  type BindingFn<T> = () => T;
 
   /**
    * Modules allow for the binding of implementations to the types that are used throughout
@@ -29,7 +32,7 @@ export namespace dip {
   export type Module<
     Structure extends ModuleStructure<any[], any> = ModuleStructure<any[], any>
   > = {
-    [K in keyof GetAllMethods<Structure>]: GetAllMethods<Structure>[K];
+    [K in keyof GetBindings<Structure>]: GetBindings<Structure>[K];
   };
 
   /**
@@ -39,32 +42,18 @@ export namespace dip {
    *   as an constructor arguments to the generated module, and are used to resolve
    *   dependencies that the module cannot resolve itself.
    *
-   * @param Parent - The module that will be used as the parent of the generated module. This
-   *   is used to resolve dependencies that the neither the module itself nor its dependencies
-   *   can resolve.
-   *
-   * @param Provided - Dependencies which are provided to the module at the time of construction.
-   *   This is primarily used when creating a module to use as a "scope" in your application,
-   *   such as a "request scope" that resolved dependencies during the lifespan of an HTTP
-   *   request. All "provided" dependencies are required parameters to the constructor of the
-   *   generated module.
-   *
    * @param Bindings - Bindings of implementations to types that this module can provide.
    *   Bindings manifest as methods on the generated module which create a value, and
    *   return it as a specific type. See {@link Bind} for more information.
    */
   export type ModuleStructure<
     Dependencies extends Module[],
-    Parent extends Module,
-    Provided extends Record<string, unknown> = {},
     Bindings extends Record<
       string,
-      Bind.Reusable<unknown> | Bind.Transient<unknown>
+      Bind.Reusable<unknown> | Bind.Transient<unknown> | Bind.Static<unknown>
     > = {}
   > = {
-    parent?: Parent;
     dependencies?: Dependencies;
-    provided?: Provided;
     bindings?: Bindings;
   };
 
@@ -80,27 +69,25 @@ export namespace dip {
      * A binding that returns the same instance of `T` every time it is called. This is used
      * for singletons, or other objects that should only be created once per module.
      */
-    export type Reusable<T extends B, B = T> = () => B;
+    export type Reusable<T extends B, B = T> = {
+      __reusable?: never;
+    } & BindingFn<B>;
 
     /**
      * A binding that returns a new instance of `T` every time it is called. This is used for
      * objects that should be created fresh each time they are requested.
      */
-    export type Transient<T extends B, B = T> = () => B;
+    export type Transient<T extends B, B = T> = {
+      __transient?: never;
+    } & BindingFn<B>;
 
     /**
-     * A special binding used to create child modules. A child module will use its parent to
-     * resolve a dependency if it cannot resolve it itself. The created module must declare
-     * its parent to be the same type as the creating module using {@link ModuleStructure#parent}.
-     *
-     * Unlike other bindings, the `Module` binding requires arguments to satisfy the dependencies
-     * and provided values of the child module.
+     * A binding that returns the same instance of `T` every time it is called. This is used
+     * for singletons, or other objects that should only be created once per module. The instance
+     * of `T` is provided to the module as a constructor argument.
      */
-    export type Module<
-      Parent extends dip.Module,
-      Child extends dip.Module<ModuleStructure<any[], Parent>>
-    > = (
-      ...dependencies: [...GetDependencies<Child>, GetProvided<Child>]
-    ) => Child;
+    export type Static<T extends B, B = T> = {
+      __static?: never;
+    } & BindingFn<B>;
   }
 }

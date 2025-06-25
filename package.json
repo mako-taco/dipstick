@@ -15,10 +15,10 @@
   },
   "dependencies": {
     "commander": "^11.1.0",
-    "ts-morph": "^21.0.1"
+    "ts-morph": "^26.0.0"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.12",
+    "@types/jest": "^29.5.14",
     "@types/node": "^20.11.19",
     "jest": "^29.7.0",
     "ts-jest": "^29.1.2",

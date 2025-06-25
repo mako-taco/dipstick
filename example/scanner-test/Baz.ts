@@ -1,3 +1,5 @@
+import { Foo } from "Foo";
+
 export class Baz {}
 
 export class FooBaz {

@@ -7,8 +7,9 @@ yarn-error.log*
 # Build output
 dist/
 bin/
-*.generated.ts
-*.generated.js
+example/**/*.js
+*.gen.ts
+*.gen.js
 
 # IDE and editor files
 .idea/
