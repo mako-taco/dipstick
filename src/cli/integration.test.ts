@@ -5,7 +5,7 @@ import path from "path";
 import { Generator } from "./generator";
 
 describe("generator", () => {
-  it("should generate files", () => {
+  it("should generate files", async () => {
     const projectRoot = path.resolve(__dirname, "../../example/scanner-test");
     const project = new Project({
       tsConfigFilePath: path.join(projectRoot, "tsconfig.json"),
@@ -22,12 +22,8 @@ describe("generator", () => {
 
     const foundModules = scanner.findModules();
 
-    const emitFiles = foundModules.map((module) =>
-      generator
-        .generateFile(module)
-        .fixMissingImports()
-        .organizeImports()
-        .save()
+    const emitFiles = await Promise.all(
+      foundModules.map((module) => generator.generateFile(module).save())
     );
   });
 });

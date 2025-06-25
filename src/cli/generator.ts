@@ -19,10 +19,10 @@ import { ILogger } from "./logger";
 import { ErrorWithContext } from "./error";
 import { match } from "assert";
 import { resolveType } from "./resolve";
-import { typesEqual } from "./compareTypes";
+import { typesEqual } from "./types-equal";
 
-const DEPENDENCY_MODULE_PROPERTY_NAME = "_dependencyModules";
-const STATIC_BINDINGS_PROPERTY_NAME = "_staticBindings";
+const DEPENDENCY_MODULE_PROPERTY_NAME = "_options.dependencyModules";
+const STATIC_BINDINGS_PROPERTY_NAME = "_options.staticBindings";
 
 export class Generator {
   constructor(
@@ -73,6 +73,19 @@ export class Generator {
         (binding) => binding.bindType === "static"
       );
 
+      const staticBindingsType = `{${staticBindings
+        .map(
+          (binding) =>
+            `readonly ${binding.name}: ${binding.implType
+              .getSymbol()
+              ?.getName()}`
+        )
+        .join(", ")}}`;
+
+      const dependencyModulesType = `readonly [${module.dependencies
+        .map((dep) => dep.text)
+        .join(", ")}]`;
+
       outputFile.addClass({
         name: `${module.name}Impl`,
         isExported: true,
@@ -82,24 +95,8 @@ export class Generator {
           {
             parameters: [
               {
-                name: DEPENDENCY_MODULE_PROPERTY_NAME,
-                type: `readonly [${module.dependencies
-                  .map((dep) => dep.text)
-                  .join(", ")}]`,
-                scope: Scope.Private,
-                isReadonly: true,
-              },
-              {
-                isReadonly: true,
-                name: STATIC_BINDINGS_PROPERTY_NAME,
-                type: `{${staticBindings
-                  .map(
-                    (binding) =>
-                      `readonly ${binding.name}: ${binding.implType
-                        .getSymbol()
-                        ?.getName()}`
-                  )
-                  .join(", ")}}`,
+                name: "_options",
+                type: `{readonly staticBindings: ${staticBindingsType}, dependencyModules: ${dependencyModulesType}}`,
                 scope: Scope.Private,
               },
             ],
@@ -132,6 +129,11 @@ export class Generator {
         ],
       });
     });
+
+    outputFile
+      .organizeImports()
+      .fixUnusedIdentifiers()
+      .formatText({ ensureNewLineAtEndOfFile: true });
 
     return outputFile;
   }

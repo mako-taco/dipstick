@@ -114,35 +114,18 @@ export type BarModule = dip.Module<{
 
 ### Provided Dependencies
 
-Modules can have dependencies that are provided at construction time. This is useful for creating scoped modules, such as request-scoped modules in a web application:
+Modules can have dependencies that are provided at construction time, using `Static` bindings. This is useful for creating scoped modules, such as request-scoped modules in a web application:
 
 ```typescript
-export type SomeOtherModule = dip.Module<{
-  bindings: dip.bind.Transient<Bar, IBar>
-}>;
-
-export type MainModule = dip.Module<{
-  dependencies: [SomeOtherModule]
-  bindings: {
-    foo: dip.Bind.Reusable<Foo>;
-    requestModule: dip.Bind.Module<MainModule, RequestModule>;
-  };
-}>;
-
 // Request-scoped module which is a child of MainModule
 export type RequestModule = dip.Module<{
-  parent: MainModule;
-  provided: {
-    request: Request;
-    response: Response;
-  };
   bindings: {
-    // Can use the request object to create request-scoped services
     user: dip.Bind.Reusable<User>;
     handler: dip.Bind.Reusable<RequestHandler>;
+    request: dip.bind.Static<Request>;
+    response: dip.bind.Static<Response>;
   };
 }>;
-
 
 // A class that does things with objects from the request scope
 export class RequestHandler {
@@ -154,8 +137,8 @@ export class RequestHandler {
 }
 
 // Now when you get a request, create the child module
-const mainModule = new MainModule_Impl();
 app.use((request: Request, response: Response) => {
+  const mainModule = new RequestModule_Impl([], { request, response });
   const handler = mainModule.requestModule({ request, response }).handler();
   handler.run();
 });
