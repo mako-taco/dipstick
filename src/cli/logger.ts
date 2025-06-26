@@ -1,4 +1,4 @@
-import { SourceFile } from "ts-morph";
+import { SourceFile } from 'ts-morph';
 
 export interface ILogger {
   log(...args: any[]): void;
@@ -51,14 +51,14 @@ export class Logger implements ILogger {
     const contextLines: [number, string][] = [];
     let newlineIdx = 0;
     for (let lineNum = 1; lineNum < fullText.length; lineNum++) {
-      newlineIdx = fullText.indexOf("\n", newlineIdx);
+      newlineIdx = fullText.indexOf('\n', newlineIdx);
       if (newlineIdx === -1) {
         break;
       }
       if (lineNum >= lineNumber - 2 && lineNum <= lineNumber + 2) {
         contextLines.push([
           lineNum,
-          fullText.substring(newlineIdx, fullText.indexOf("\n", newlineIdx)),
+          fullText.substring(newlineIdx, fullText.indexOf('\n', newlineIdx)),
         ]);
       }
       newlineIdx++;
@@ -76,7 +76,7 @@ export class Logger implements ILogger {
         ([lineNum, line]) =>
           `${lineNum.toString().padStart(maxLineNumStrLength)}: ${line}`
       )
-      .join("\n");
+      .join('\n');
     console.error(`${message}\n${contextStr}`);
   }
 }

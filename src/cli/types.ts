@@ -5,7 +5,7 @@ import {
   Type,
   TypeAliasDeclaration,
   TypeLiteralNode,
-} from "ts-morph";
+} from 'ts-morph';
 
 export interface FoundModule {
   name: string;
@@ -16,7 +16,7 @@ export interface FoundModule {
 
 export type ProcessedBinding = {
   name: string;
-  bindType: "reusable" | "transient" | "static";
+  bindType: 'reusable' | 'transient' | 'static';
   implType: ClassDeclaration;
   ifaceType: InterfaceDeclaration | ClassDeclaration | TypeAliasDeclaration;
   pos: [number, number];

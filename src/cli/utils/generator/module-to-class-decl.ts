@@ -4,32 +4,32 @@ import {
   OptionalKind,
   PropertyDeclarationStructure,
   Scope,
-} from "ts-morph";
-import { ProcessedModule } from "../../types";
-import { createMethodBody } from "./create-method-body";
-import { getPropertyNameForCachedBinding } from "./property-names";
+} from 'ts-morph';
+import { ProcessedModule } from '../../types';
+import { createMethodBody } from './create-method-body/create-method-body';
+import { getPropertyNameForCachedBinding } from './property-names';
 
 export const moduleToClassDecl = (
   module: ProcessedModule
 ): OptionalKind<ClassDeclarationStructure> => {
   const reusableBindings = module.bindings.filter(
-    (binding) => binding.bindType === "reusable"
+    binding => binding.bindType === 'reusable'
   );
 
   const staticBindings = module.bindings.filter(
-    (binding) => binding.bindType === "static"
+    binding => binding.bindType === 'static'
   );
 
   const staticBindingsType = `{${staticBindings
     .map(
-      (binding) =>
+      binding =>
         `readonly ${binding.name}: ${binding.implType.getSymbol()?.getName()}`
     )
-    .join(", ")}}`;
+    .join(', ')}}`;
 
   const dependencyModulesType = `readonly [${module.dependencies
-    .map((dep) => dep.text)
-    .join(", ")}]`;
+    .map(dep => dep.text)
+    .join(', ')}]`;
 
   return {
     name: `${module.name}Impl`,
@@ -40,7 +40,7 @@ export const moduleToClassDecl = (
       {
         parameters: [
           {
-            name: "_options",
+            name: '_options',
             type: `{readonly staticBindings: ${staticBindingsType}, dependencyModules: ${dependencyModulesType}}`,
             scope: Scope.Private,
           },
@@ -49,19 +49,19 @@ export const moduleToClassDecl = (
     ],
     properties: [
       ...reusableBindings.map(
-        (binding) =>
+        binding =>
           ({
             name: getPropertyNameForCachedBinding(binding),
             type: binding.implType.getSymbol()?.getName(),
             hasQuestionToken: true,
             isReadonly: false,
             scope: Scope.Private,
-          } satisfies OptionalKind<PropertyDeclarationStructure>)
+          }) satisfies OptionalKind<PropertyDeclarationStructure>
       ),
     ],
     methods: [
       ...module.bindings.map(
-        (binding) =>
+        binding =>
           ({
             name: `${binding.name}`,
             isStatic: false,
@@ -69,7 +69,7 @@ export const moduleToClassDecl = (
             returnType: binding.ifaceType.getSymbol()?.getName(),
             parameters: [],
             statements: createMethodBody(module, binding),
-          } satisfies OptionalKind<MethodDeclarationStructure>)
+          }) satisfies OptionalKind<MethodDeclarationStructure>
       ),
     ],
   };

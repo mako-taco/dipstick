@@ -3,11 +3,11 @@ import {
   OptionalKind,
   Project,
   SourceFile,
-} from "ts-morph";
+} from 'ts-morph';
 
-import { ILogger } from "./logger";
-import { moduleToClassDecl } from "./utils/generator/module-to-class-decl";
-import { ProcessedModuleGroup } from "./types";
+import { ILogger } from './logger';
+import { moduleToClassDecl } from './utils/generator/module-to-class-decl';
+import { ProcessedModuleGroup } from './types';
 
 export class Generator {
   constructor(
@@ -24,7 +24,7 @@ export class Generator {
       { overwrite: true }
     );
 
-    moduleGroup.imports.forEach((moduleGroupImport) => {
+    moduleGroup.imports.forEach(moduleGroupImport => {
       outputFile.addImportDeclaration({
         ...moduleGroupImport,
       });

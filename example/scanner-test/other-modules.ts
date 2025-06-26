@@ -18,6 +18,7 @@ type InternalModule = dip.Module<{
 
 export type AnotherModule = dip.Module<{
   bindings: {
+    // The "Foo" type is not exported, so the generated code is going to be broken
     another: dip.Bind.Transient<Foo>;
   };
 }>;

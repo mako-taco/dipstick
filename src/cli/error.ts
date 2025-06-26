@@ -1,4 +1,4 @@
-import { Node, SourceFile } from "ts-morph";
+import { Node, SourceFile } from 'ts-morph';
 
 export class ErrorWithContext extends Error {
   constructor(node: Node, message: string);
@@ -17,23 +17,23 @@ export class ErrorWithContext extends Error {
       ? posOrMessage
       : [sourceFileOrNode.getStart(), sourceFileOrNode.getEnd()];
     const message =
-      typeof posOrMessage === "string" ? posOrMessage : maybeMessage;
+      typeof posOrMessage === 'string' ? posOrMessage : maybeMessage;
 
     let idx = 0;
     let startLine = 0;
 
     while (idx < pos[0]) {
-      idx = fullText.indexOf("\n", idx + 1);
+      idx = fullText.indexOf('\n', idx + 1);
       startLine++;
     }
 
     let endLine = startLine;
     do {
-      idx = fullText.indexOf("\n", idx + 1);
+      idx = fullText.indexOf('\n', idx + 1);
       endLine++;
     } while (idx < pos[1]);
 
-    const lines = fullText.split("\n");
+    const lines = fullText.split('\n');
     const ctxStartLine = Math.max(0, startLine - 3);
     const ctxEndLine = Math.min(lines.length, endLine + 2);
     const numberedContextLines = lines
@@ -51,11 +51,11 @@ export class ErrorWithContext extends Error {
       .map(([lineNumber, line]) => {
         return `${
           lineNumber >= startLine && lineNumber < endLine
-            ? "\x1b[0;31m> \x1b[0m"
-            : "  "
-        } ${lineNumber.toString().padStart(pad, " ")} | ${line}`;
+            ? '\x1b[0;31m> \x1b[0m'
+            : '  '
+        } ${lineNumber.toString().padStart(pad, ' ')} | ${line}`;
       })
-      .join("\n");
+      .join('\n');
 
     super(
       `${message} (at ${sourceFile.getFilePath()}:${startLine})\n\n${formattedContext}`

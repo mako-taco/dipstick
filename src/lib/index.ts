@@ -1,6 +1,6 @@
 export namespace dip {
   type GetBindings<Structure extends ModuleStructure<Module[], Module>> =
-    Structure["bindings"];
+    Structure['bindings'];
 
   type GetStaticBindings<Structure extends ModuleStructure<Module[], Module>> =
     {
@@ -30,7 +30,7 @@ export namespace dip {
    * ```
    */
   export type Module<
-    Structure extends ModuleStructure<any[], any> = ModuleStructure<any[], any>
+    Structure extends ModuleStructure<any[], any> = ModuleStructure<any[], any>,
   > = {
     [K in keyof GetBindings<Structure>]: GetBindings<Structure>[K];
   };
@@ -51,7 +51,7 @@ export namespace dip {
     Bindings extends Record<
       string,
       Bind.Reusable<unknown> | Bind.Transient<unknown> | Bind.Static<unknown>
-    > = {}
+    > = {},
   > = {
     dependencies?: Dependencies;
     bindings?: Bindings;
