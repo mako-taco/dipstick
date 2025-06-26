@@ -1,14 +1,14 @@
-import { Project, PropertySignature, SyntaxKind } from "ts-morph";
-import { FoundModule, ProcessedBinding } from "../../types";
-import { ErrorWithContext } from "../../error";
-import { resolveTypeToClass, resolveType } from "./resolve";
+import { Project, PropertySignature, SyntaxKind } from 'ts-morph';
+import { FoundModule, ProcessedBinding } from '../../types';
+import { ErrorWithContext } from '../../error';
+import { resolveTypeToClass, resolveType } from './resolve';
 
 export const foundModuleToProcessedBindings = (
   module: FoundModule,
   project: Project
 ): ProcessedBinding[] => {
   return (
-    module.bindings?.getProperties().map((property) => {
+    module.bindings?.getProperties().map(property => {
       const typeArgs = property
         .getTypeNode()
         ?.asKind(SyntaxKind.TypeReference)
@@ -50,15 +50,15 @@ export const foundModuleToProcessedBindings = (
 
 const getBindingTypeFromProperty = (
   property: PropertySignature
-): "reusable" | "transient" | "static" => {
+): 'reusable' | 'transient' | 'static' => {
   const propertyTypeText = property.getType().getText();
-  return propertyTypeText.indexOf("Reusable") !== -1
-    ? "reusable"
-    : propertyTypeText.indexOf("Transient") !== -1
-    ? "transient"
-    : propertyTypeText.indexOf("Static") !== -1
-    ? "static"
-    : (() => {
-        throw new Error("Unknown binding type");
-      })();
+  return propertyTypeText.indexOf('Reusable') !== -1
+    ? 'reusable'
+    : propertyTypeText.indexOf('Transient') !== -1
+      ? 'transient'
+      : propertyTypeText.indexOf('Static') !== -1
+        ? 'static'
+        : (() => {
+            throw new Error('Unknown binding type');
+          })();
 };

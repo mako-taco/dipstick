@@ -7,7 +7,7 @@ import {
   SyntaxKind,
   Type,
   TypeAliasDeclaration,
-} from "ts-morph";
+} from 'ts-morph';
 
 export const resolveType = (
   type: Type,
@@ -25,27 +25,26 @@ export const resolveType = (
   const resolution = [type.getSymbol(), type.getAliasSymbol()]
     .filter(
       (symbol): symbol is Symbol =>
-        !!symbol && symbol.getFullyQualifiedName() !== "__type"
+        !!symbol && symbol.getFullyQualifiedName() !== '__type'
     )
-    .map((symbol) => {
+    .map(symbol => {
       const fqn = symbol.getFullyQualifiedName();
       const execResult = /^\"(.*?)\"\./.exec(fqn);
 
       return {
         name: symbol.getName(),
         // Its possible that this type exists in sourceFile, meaning its FQN would contain no file path
-        importPath:
-          execResult?.[1] ?? sourceFilePath.replace(/\.tsx?$/, ""),
+        importPath: execResult?.[1] ?? sourceFilePath.replace(/\.tsx?$/, ''),
       };
     })
-    .find((result) => !!result);
+    .find(result => !!result);
 
   if (!resolution) {
-    return { error: "Malformed FQN" };
+    return { error: 'Malformed FQN' };
   }
 
-  const sourceOfType = ["ts", "tsx"]
-    .map((ext) => project.getSourceFile(`${resolution.importPath}.${ext}`))
+  const sourceOfType = ['ts', 'tsx']
+    .map(ext => project.getSourceFile(`${resolution.importPath}.${ext}`))
     .find(Boolean);
 
   if (!sourceOfType) {
