@@ -2,15 +2,10 @@ import {
   Project,
   Node,
   SyntaxKind,
-  SourceFile,
-  Type,
-  TypeAliasDeclaration,
+  SourceFile, TypeAliasDeclaration,
   TypeLiteralNode,
   TupleTypeNode,
-  PropertySignature,
-  ts,
-  InterfaceDeclaration,
-  ClassDeclaration,
+  PropertySignature
 } from "ts-morph";
 import { ILogger } from "./logger";
 import { ErrorWithContext } from "./error";
@@ -18,60 +13,10 @@ import {
   resolveTypeToClass,
   resolveType,
   resolveTypeToInterfaceOrTypeAlias,
-} from "./resolve";
-
-interface FoundModule {
-  name: string;
-  filePath: string;
-  dependencies?: TupleTypeNode;
-  bindings?: TypeLiteralNode;
-}
-
-export type ProcessedBinding = {
-  name: string;
-  bindType: "reusable" | "transient" | "static";
-  implType: ClassDeclaration;
-  ifaceType: InterfaceDeclaration | ClassDeclaration | TypeAliasDeclaration;
-  pos: [number, number];
-};
-
-export type ProcessedDependency = {
-  text: string;
-  type: InterfaceDeclaration | TypeAliasDeclaration;
-  pos: [number, number];
-};
-
-export interface ProcessedModule {
-  name: string;
-  dependencies: ProcessedDependency[];
-  bindings: ProcessedBinding[];
-}
-
-export type ProcessedSourceFile = {
-  name: string;
-  filePath: string;
-  dependencies?: {
-    text: string;
-    type: Type;
-  };
-  bindings: {
-    name: string;
-    type: Type;
-  }[];
-}[];
-
-export interface ProcessedModuleGroup {
-  filePath: string;
-  sourceFilePath: string;
-  imports: {
-    namedImports: {
-      name: string;
-      isTypeOnly: boolean;
-    }[];
-    moduleSpecifier: string;
-  }[];
-  modules: ProcessedModule[];
-}
+} from "./utils/scanner/resolve";
+import { FoundModule, ProcessedBinding, ProcessedDependency, ProcessedModule, ProcessedModuleGroup, ProcessedModuleGroupImport } from "./types";
+import { foundModuleToProcessedDependencies } from "./utils/scanner/found-module-to-processed-deps";
+import { foundModuleToProcessedBindings } from "./utils/scanner/found-module-to-processed-bindings";
 
 export class Scanner {
   constructor(
@@ -110,7 +55,7 @@ export class Scanner {
           this.project.createSourceFile(generatedFilePath);
 
         const sourceFile = this.project.getSourceFileOrThrow(filePath);
-        const imports: ProcessedModuleGroup["imports"] = sourceFile
+        const imports: ProcessedModuleGroupImport[] = sourceFile
           .getImportDeclarations()
           .map((sourceImport) => ({
             namedImports: sourceImport.getNamedImports().map((ni) => {
@@ -140,7 +85,7 @@ export class Scanner {
           sourceFilePath: filePath,
           filePath: generatedFilePath,
           modules: modules.map((module) =>
-            this.processModule(module, sourceFile)
+            this.processModule(module)
           ),
           imports,
         };
@@ -149,105 +94,15 @@ export class Scanner {
   }
   private processModule(
     module: FoundModule,
-    sourceFile: SourceFile
   ): ProcessedModule {
-    const dependencies: ProcessedModule["dependencies"] =
-      module.dependencies?.getElements().map((element) => {
-        const type = element.getType();
-        const result = resolveTypeToInterfaceOrTypeAlias(
-          type,
-          sourceFile,
-          this.project
-        );
-        if (result.error !== null) {
-          throw new ErrorWithContext(
-            sourceFile,
-            [element.getStart(), element.getEnd()],
-            result.error
-          );
-        }
-
-        const { resolvedType } = result;
-
-        return {
-          text: element.getText(),
-          type: resolvedType,
-          pos: [element.getStart(), element.getEnd()],
-        };
-      }) ?? [];
-
-    const bindings: ProcessedModule["bindings"] =
-      module.bindings?.getProperties().map((property) => {
-        const typeArgs = property
-          .getTypeNode()
-          ?.asKind(SyntaxKind.TypeReference)
-          ?.getTypeArguments();
-
-        if (!typeArgs) {
-          throw new ErrorWithContext(
-            sourceFile,
-            [property.getStart(), property.getEnd()],
-            `Could not find type arguments for binding ${property.getName()}. Bindings MUST be in the form of 'name: dip.Bind.(Reusable|Static|Transient)<T>`
-          );
-        }
-
-        const implType = typeArgs[0].getType();
-        const implTypeResult = resolveTypeToClass(
-          implType,
-          sourceFile,
-          this.project
-        );
-        if (implTypeResult.error !== null) {
-          throw new ErrorWithContext(
-            sourceFile,
-            [property.getStart(), property.getEnd()],
-            implTypeResult.error
-          );
-        }
-
-        const ifaceType = (typeArgs[1] ?? typeArgs[0]).getType();
-        const ifaceTypeResult = resolveType(
-          ifaceType,
-          sourceFile,
-          this.project
-        );
-        if (ifaceTypeResult.error !== null) {
-          throw new ErrorWithContext(
-            sourceFile,
-            [property.getStart(), property.getEnd()],
-            ifaceTypeResult.error
-          );
-        }
-
-        return {
-          name: property.getName(),
-          bindType: this.getBindingTypeFromProperty(property),
-          pos: [property.getStart(), property.getEnd()],
-          implType: implTypeResult.resolvedType,
-          ifaceType: ifaceTypeResult.resolvedType,
-        };
-      }) ?? [];
+    const dependencies: ProcessedDependency[] = foundModuleToProcessedDependencies(module, this.project)
+    const bindings: ProcessedBinding[] = foundModuleToProcessedBindings(module, this.project);
 
     return {
       name: module.name,
       dependencies,
       bindings,
     };
-  }
-
-  private getBindingTypeFromProperty(
-    property: PropertySignature
-  ): "reusable" | "transient" | "static" {
-    const propertyTypeText = property.getType().getText();
-    return propertyTypeText.indexOf("Reusable") !== -1
-      ? "reusable"
-      : propertyTypeText.indexOf("Transient") !== -1
-      ? "transient"
-      : propertyTypeText.indexOf("Static") !== -1
-      ? "static"
-      : (() => {
-          throw new Error("Unknown binding type");
-        })();
   }
 
   private groupModulesByFilePath(

@@ -11,7 +11,7 @@ import {
 
 export const resolveType = (
   type: Type,
-  sourceFile: SourceFile,
+  sourceFilePath: string,
   project: Project
 ):
   | {
@@ -35,7 +35,7 @@ export const resolveType = (
         name: symbol.getName(),
         // Its possible that this type exists in sourceFile, meaning its FQN would contain no file path
         importPath:
-          execResult?.[1] ?? sourceFile.getFilePath().replace(/\.tsx?$/, ""),
+          execResult?.[1] ?? sourceFilePath.replace(/\.tsx?$/, ""),
       };
     })
     .find((result) => !!result);
@@ -73,10 +73,10 @@ export const resolveType = (
 
 export const resolveTypeToClass = (
   type: Type,
-  sourceFile: SourceFile,
+  sourceFilePath: string,
   project: Project
 ): { error: null; resolvedType: ClassDeclaration } | { error: string } => {
-  const result = resolveType(type, sourceFile, project);
+  const result = resolveType(type, sourceFilePath, project);
   if (result.error !== null) {
     return result;
   }
@@ -95,12 +95,12 @@ export const resolveTypeToClass = (
 
 export const resolveTypeToInterfaceOrTypeAlias = (
   type: Type,
-  sourceFile: SourceFile,
+  sourceFilePath: string,
   project: Project
 ):
   | { error: null; resolvedType: InterfaceDeclaration | TypeAliasDeclaration }
   | { error: string } => {
-  const result = resolveType(type, sourceFile, project);
+  const result = resolveType(type, sourceFilePath, project);
   if (result.error !== null) {
     return result;
   }
