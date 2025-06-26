@@ -16,6 +16,7 @@ export class Generator {
   ) {}
 
   public generateFile(moduleGroup: ProcessedModuleGroup): SourceFile {
+    this.logger.info(`Generating file ${moduleGroup.filePath}`);
     const existingFile = this.project.getSourceFile(moduleGroup.filePath);
     if (existingFile) this.project.removeSourceFile(existingFile);
     const outputFile = this.project.createSourceFile(
@@ -35,6 +36,12 @@ export class Generator {
         moduleToClassDecl
       );
 
+    this.logger.info(`↳ Adding ${classDecls.length} classes to file`);
+    classDecls.forEach(classDecl => {
+      this.logger.info(
+        `  ↳ ${classDecl.name} (${classDecl.methods?.length} methods)`
+      );
+    });
     outputFile.addClasses(classDecls);
 
     outputFile

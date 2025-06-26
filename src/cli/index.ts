@@ -13,22 +13,25 @@ program
   .description('Generate dependency injection code from TypeScript files')
   .argument('<tsconfig>', 'Path to tsconfig.json file')
   .option('-v --verbose', 'Enable verbose logging')
-  .action(
-    async ({ tsconfig, verbose }: { tsconfig: string; verbose: boolean }) => {
-      const project = new Project({
-        tsConfigFilePath: tsconfig,
-      });
-      const logger = new Logger(verbose);
-      const generator = new Generator(project, logger);
-      const scanner = new Scanner(project, logger);
+  .action(async (tsconfig: string, { verbose }: { verbose: boolean }) => {
+    const project = new Project({
+      tsConfigFilePath: tsconfig,
+    });
+    const logger = new Logger(verbose);
+    const generator = new Generator(project, logger);
+    const scanner = new Scanner(project, logger);
 
-      const modules = scanner.findModules();
-      const fileEmitPromises = modules.map(module =>
-        generator.generateFile(module).emit()
-      );
+    logger.info(`Scanning for modules in ${tsconfig}...`);
 
-      await Promise.all(fileEmitPromises);
-    }
-  );
+    const moduleGroups = scanner.findModules();
+
+    logger.info(`↳ Found ${moduleGroups.length} files with modules in them.`);
+
+    const fileEmitPromises = moduleGroups.map(module =>
+      generator.generateFile(module).save()
+    );
+
+    await Promise.all(fileEmitPromises);
+  });
 
 program.parse();

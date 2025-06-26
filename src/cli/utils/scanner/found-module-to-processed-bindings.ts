@@ -41,9 +41,17 @@ export const foundModuleToProcessedBindings = (
         name: property.getName(),
         bindType: getBindingTypeFromProperty(property),
         pos: [property.getStart(), property.getEnd()],
-        implType: implTypeResult.resolvedType,
-        ifaceType: ifaceTypeResult.resolvedType,
-      };
+        impl: {
+          declaration: implTypeResult.resolvedType,
+          fqn: implTypeResult.resolvedType.getSymbol()!.getFullyQualifiedName(),
+        },
+        iface: {
+          declaration: ifaceTypeResult.resolvedType,
+          fqn: ifaceTypeResult.resolvedType
+            .getSymbol()!
+            .getFullyQualifiedName(),
+        },
+      } satisfies ProcessedBinding;
     }) ?? []
   );
 };
