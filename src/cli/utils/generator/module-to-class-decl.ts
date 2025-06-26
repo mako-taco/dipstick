@@ -2,6 +2,7 @@ import {
   ClassDeclarationStructure,
   MethodDeclarationStructure,
   OptionalKind,
+  ParameterDeclarationStructure,
   PropertyDeclarationStructure,
   Scope,
 } from 'ts-morph';
@@ -20,16 +21,35 @@ export const moduleToClassDecl = (
     binding => binding.bindType === 'static'
   );
 
-  const staticBindingsType = `{${staticBindings
+  const staticBindingsType = `Readonly<{${staticBindings
     .map(
       binding =>
-        `readonly ${binding.name}: ${binding.impl.declaration.getSymbol()?.getName()}`
+        `${binding.name}: ${binding.impl.declaration.getSymbol()?.getName()}`
     )
-    .join(', ')}}`;
+    .join('; ')}}>`;
 
   const dependencyModulesType = `readonly [${module.dependencies
     .map(dep => dep.text)
     .join(', ')}]`;
+
+  const optionsProperties = [
+    staticBindings.length > 0
+      ? { name: '_static', type: staticBindingsType }
+      : null,
+    module.dependencies.length > 0
+      ? { name: '_modules', type: dependencyModulesType }
+      : null,
+  ].filter(prop => prop !== null);
+
+  const parameters = optionsProperties.map(
+    prop =>
+      ({
+        name: prop.name,
+        type: prop.type,
+        isReadonly: true,
+        scope: Scope.Private,
+      }) satisfies OptionalKind<ParameterDeclarationStructure>
+  );
 
   return {
     name: `${module.name}Impl`,
@@ -38,13 +58,7 @@ export const moduleToClassDecl = (
     implements: [module.name],
     ctors: [
       {
-        parameters: [
-          {
-            name: '_options',
-            type: `{readonly staticBindings: ${staticBindingsType}, dependencyModules: ${dependencyModulesType}}`,
-            scope: Scope.Private,
-          },
-        ],
+        parameters,
       },
     ],
     properties: [

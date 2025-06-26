@@ -1,5 +1,5 @@
 import { Project } from 'ts-morph';
-import { ErrorWithContext } from '../../error';
+import { CodegenError } from '../../error';
 import { FoundModule, ProcessedDependency } from '../../types';
 import { resolveTypeToInterfaceOrTypeAlias } from './resolve';
 
@@ -16,7 +16,7 @@ export const foundModuleToProcessedDependencies = (
         project
       );
       if (result.error !== null) {
-        throw new ErrorWithContext(element, result.error);
+        throw new CodegenError(element, result.error);
       }
 
       const { resolvedType } = result;

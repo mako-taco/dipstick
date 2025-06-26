@@ -1,7 +1,7 @@
 import { SyntaxKind } from 'ts-morph';
 import { ProcessedBinding, ProcessedModule } from '../../../types';
 
-import { ErrorWithContext } from '../../../error';
+import { CodegenError } from '../../../error';
 import {
   getPropertyNameForDependency,
   getPropertyNameForStaticBinding,
@@ -58,7 +58,7 @@ export const createMethodBody = (
           propertyDecl.asKind(SyntaxKind.MethodSignature);
 
         if (!signature) {
-          throw new ErrorWithContext(
+          throw new CodegenError(
             dep.type,
             `Expected a property signature for \`${
               dep.text
@@ -72,7 +72,7 @@ export const createMethodBody = (
           ?.getReturnType();
 
         if (!methodReturnType) {
-          throw new ErrorWithContext(
+          throw new CodegenError(
             dep.type,
             `Expected a method signature with a return type for \`${
               dep.text
@@ -91,7 +91,7 @@ export const createMethodBody = (
       }
     }
 
-    throw new ErrorWithContext(
+    throw new CodegenError(
       param,
       `Module \`${
         module.name

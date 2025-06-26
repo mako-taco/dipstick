@@ -149,7 +149,7 @@ app.use((request: Request, response: Response) => {
 1. Define your modules using type aliases to `dip.Module`
 2. Run the code generator:
    ```bash
-   npm exec dipstick generate ./path/to/tsconfig.json
+   npm exec -- dipstick generate ./path/to/tsconfig.json --verbose
    ```
 3. Use the generated modules in your application:
    ```typescript

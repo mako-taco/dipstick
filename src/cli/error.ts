@@ -1,6 +1,6 @@
 import { Node, SourceFile } from 'ts-morph';
 
-export class ErrorWithContext extends Error {
+export class CodegenError extends Error {
   constructor(node: Node, message: string);
   constructor(sourceFile: SourceFile, pos: [number, number], message: string);
   constructor(

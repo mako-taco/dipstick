@@ -5,7 +5,7 @@ import {
   ProcessedModule,
   ProcessedDependency,
 } from '../../../types';
-import { ErrorWithContext } from '../../../error';
+import { CodegenError } from '../../../error';
 import path from 'path';
 
 describe('createMethodBody', () => {
@@ -89,7 +89,7 @@ describe('createMethodBody', () => {
 
       const result = createMethodBody(module, binding);
 
-      expect(result).toBe('return this._options.staticBindings.testBinding;');
+      expect(result).toBe('return this._options.static.testBinding;');
     });
   });
 
@@ -272,7 +272,7 @@ describe('createMethodBody', () => {
   });
 
   describe('error handling', () => {
-    it('should throw ErrorWithContext when parameter cannot be resolved', () => {
+    it('should throw CodegenError when parameter cannot be resolved', () => {
       const serviceBinding = getProcessedBinding(
         'serviceBinding',
         'transient',
@@ -287,14 +287,14 @@ describe('createMethodBody', () => {
       };
 
       expect(() => createMethodBody(module, serviceBinding)).toThrow(
-        ErrorWithContext
+        CodegenError
       );
       expect(() => createMethodBody(module, serviceBinding)).toThrow(
         /Module `TestModule` cannot be built:[\s\S]*Parameter `repo` of class `ServiceWithOneParam` cannot be resolved./
       );
     });
 
-    it('should throw ErrorWithContext when dependency property is not a property signature', () => {
+    it('should throw CodegenError when dependency property is not a property signature', () => {
       // Create a dependency with an invalid property structure - using a separate file name
       const invalidDepsFile = project.createSourceFile(
         'invalid-deps.ts',
@@ -330,7 +330,7 @@ describe('createMethodBody', () => {
       };
 
       expect(() => createMethodBody(module, serviceBinding)).toThrow(
-        ErrorWithContext
+        CodegenError
       );
       expect(() => createMethodBody(module, serviceBinding)).toThrow(
         'Expected a method signature with a return type for `InvalidDep.invalidProp`'

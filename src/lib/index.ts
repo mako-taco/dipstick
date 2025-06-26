@@ -2,15 +2,6 @@ export namespace dip {
   type GetBindings<Structure extends ModuleStructure<Module[], Module>> =
     Structure['bindings'];
 
-  type GetStaticBindings<Structure extends ModuleStructure<Module[], Module>> =
-    {
-      [K in keyof GetBindings<Structure>]: GetBindings<Structure>[K] extends Bind.Static<
-        infer T
-      >
-        ? Bind.Static<T>
-        : never;
-    };
-
   type BindingFn<T> = () => T;
 
   /**

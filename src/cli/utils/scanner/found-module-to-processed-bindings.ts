@@ -1,6 +1,6 @@
 import { Project, PropertySignature, SyntaxKind } from 'ts-morph';
 import { FoundModule, ProcessedBinding } from '../../types';
-import { ErrorWithContext } from '../../error';
+import { CodegenError } from '../../error';
 import { resolveTypeToClass, resolveType } from './resolve';
 
 export const foundModuleToProcessedBindings = (
@@ -9,37 +9,41 @@ export const foundModuleToProcessedBindings = (
 ): ProcessedBinding[] => {
   return (
     module.bindings?.getProperties().map(property => {
+      const bindType = getBindingTypeFromProperty(property);
       const typeArgs = property
         .getTypeNode()
         ?.asKind(SyntaxKind.TypeReference)
         ?.getTypeArguments();
 
       if (!typeArgs) {
-        throw new ErrorWithContext(
+        throw new CodegenError(
           property,
           `Could not find type arguments for binding ${property.getName()}. Bindings MUST be in the form of 'name: dip.Bind.(Reusable|Static|Transient)<T>`
         );
       }
 
       const implType = typeArgs[0].getType();
-      const implTypeResult = resolveTypeToClass(
-        implType,
-        module.filePath,
-        project
-      );
+
+      // Static bindings don't need impl types to be classes, because they are
+      // provided to the module's constructor.
+      const implTypeResult =
+        bindType === 'static'
+          ? resolveType(implType, module.filePath, project)
+          : resolveTypeToClass(implType, module.filePath, project);
+
       if (implTypeResult.error !== null) {
-        throw new ErrorWithContext(property, implTypeResult.error);
+        throw new CodegenError(property, implTypeResult.error);
       }
 
       const ifaceType = (typeArgs[1] ?? typeArgs[0]).getType();
       const ifaceTypeResult = resolveType(ifaceType, module.filePath, project);
       if (ifaceTypeResult.error !== null) {
-        throw new ErrorWithContext(property, ifaceTypeResult.error);
+        throw new CodegenError(property, ifaceTypeResult.error);
       }
 
       return {
         name: property.getName(),
-        bindType: getBindingTypeFromProperty(property),
+        bindType,
         pos: [property.getStart(), property.getEnd()],
         impl: {
           declaration: implTypeResult.resolvedType,
@@ -51,7 +55,7 @@ export const foundModuleToProcessedBindings = (
             .getSymbol()!
             .getFullyQualifiedName(),
         },
-      } satisfies ProcessedBinding;
+      } as ProcessedBinding; // TODO
     }) ?? []
   );
 };

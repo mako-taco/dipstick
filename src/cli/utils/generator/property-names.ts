@@ -4,8 +4,8 @@ import {
   ProcessedModule,
 } from '../../types';
 
-const DEPENDENCY_MODULE_PROPERTY_NAME = '_options.dependencyModules';
-const STATIC_BINDINGS_PROPERTY_NAME = '_options.staticBindings';
+const DEPENDENCY_MODULE_PROPERTY_NAME = '_modules';
+const STATIC_BINDINGS_PROPERTY_NAME = '_static';
 
 export const getPropertyNameForDependency = (
   module: ProcessedModule,

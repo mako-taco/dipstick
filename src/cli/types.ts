@@ -14,19 +14,42 @@ export interface FoundModule {
   bindings?: TypeLiteralNode;
 }
 
-export type ProcessedBinding = {
-  name: string;
-  bindType: 'reusable' | 'transient' | 'static';
-  impl: {
-    declaration: ClassDeclaration;
-    fqn: string;
-  };
-  iface: {
-    declaration: InterfaceDeclaration | ClassDeclaration | TypeAliasDeclaration;
-    fqn: string;
-  };
-  pos: [number, number];
-};
+export type ProcessedBinding =
+  | {
+      name: string;
+      bindType: 'reusable' | 'transient';
+      impl: {
+        declaration: ClassDeclaration;
+        fqn: string;
+      };
+      iface: {
+        declaration:
+          | InterfaceDeclaration
+          | ClassDeclaration
+          | TypeAliasDeclaration;
+        fqn: string;
+      };
+      pos: [number, number];
+    }
+  | {
+      name: string;
+      bindType: 'static';
+      impl: {
+        declaration:
+          | InterfaceDeclaration
+          | ClassDeclaration
+          | TypeAliasDeclaration;
+        fqn: string;
+      };
+      iface: {
+        declaration:
+          | InterfaceDeclaration
+          | ClassDeclaration
+          | TypeAliasDeclaration;
+        fqn: string;
+      };
+      pos: [number, number];
+    };
 
 export type ProcessedDependency = {
   text: string;

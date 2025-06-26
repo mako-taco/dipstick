@@ -4,17 +4,8 @@ import {
   SyntaxKind,
   SourceFile,
   TypeAliasDeclaration,
-  TypeLiteralNode,
-  TupleTypeNode,
-  PropertySignature,
 } from 'ts-morph';
 import { ILogger } from './logger';
-import { ErrorWithContext } from './error';
-import {
-  resolveTypeToClass,
-  resolveType,
-  resolveTypeToInterfaceOrTypeAlias,
-} from './utils/scanner/resolve';
 import {
   FoundModule,
   ProcessedBinding,
