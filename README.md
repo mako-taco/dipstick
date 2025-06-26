@@ -19,7 +19,7 @@ Dipstick uses TypeScript's type system and code generation to create dependency 
 Modules are the core building blocks of Dipstick. They allow you to bind implementations to types that are used throughout your project. To create a module, export a type alias to `dip.Module`:
 
 ```typescript
-import { dip } from "dipstick";
+import { dip } from 'dipstick';
 
 interface IFoo {}
 class Foo implements IFoo {}
@@ -132,7 +132,7 @@ export class RequestHandler {
   constructor(request: Request, response: Response);
 
   run() {
-    response.send(200, request.headers["content-length"]);
+    response.send(200, request.headers['content-length']);
   }
 }
 
@@ -169,5 +169,18 @@ The code generator will:
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-`
+Contributions are welcome! Please see our [CONTRIBUTORS.md](./CONTRIBUTORS.md) guide for detailed information about:
+
+- Setting up the development environment
+- Running tests and code quality checks
+- Code style guidelines
+- Submitting pull requests
+
+For quick contributions:
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run `npm run check && npm test`
+5. Submit a Pull Request
+   `
