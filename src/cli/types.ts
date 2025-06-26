@@ -17,8 +17,14 @@ export interface FoundModule {
 export type ProcessedBinding = {
   name: string;
   bindType: 'reusable' | 'transient' | 'static';
-  implType: ClassDeclaration;
-  ifaceType: InterfaceDeclaration | ClassDeclaration | TypeAliasDeclaration;
+  impl: {
+    declaration: ClassDeclaration;
+    fqn: string;
+  };
+  iface: {
+    declaration: InterfaceDeclaration | ClassDeclaration | TypeAliasDeclaration;
+    fqn: string;
+  };
   pos: [number, number];
 };
 

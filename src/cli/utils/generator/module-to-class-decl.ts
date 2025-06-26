@@ -23,7 +23,7 @@ export const moduleToClassDecl = (
   const staticBindingsType = `{${staticBindings
     .map(
       binding =>
-        `readonly ${binding.name}: ${binding.implType.getSymbol()?.getName()}`
+        `readonly ${binding.name}: ${binding.impl.declaration.getSymbol()?.getName()}`
     )
     .join(', ')}}`;
 
@@ -52,7 +52,7 @@ export const moduleToClassDecl = (
         binding =>
           ({
             name: getPropertyNameForCachedBinding(binding),
-            type: binding.implType.getSymbol()?.getName(),
+            type: binding.impl.declaration.getSymbol()?.getName(),
             hasQuestionToken: true,
             isReadonly: false,
             scope: Scope.Private,
@@ -66,7 +66,7 @@ export const moduleToClassDecl = (
             name: `${binding.name}`,
             isStatic: false,
             isAsync: false,
-            returnType: binding.ifaceType.getSymbol()?.getName(),
+            returnType: binding.iface.declaration.getSymbol()?.getName(),
             parameters: [],
             statements: createMethodBody(module, binding),
           }) satisfies OptionalKind<MethodDeclarationStructure>

@@ -6,7 +6,6 @@ import {
   getPropertyNameForDependency,
   getPropertyNameForStaticBinding,
 } from '../property-names';
-import { typesEqual } from '../types-equal';
 
 /**
  * Creates the method body for a binding method.
@@ -33,16 +32,17 @@ export const createMethodBody = (
     return lines.join('\n');
   }
 
-  const className = binding.implType.getName();
-  const ctor = binding.implType.getConstructors()[0];
+  const className = binding.impl.declaration.getName();
+  const ctor = binding.impl.declaration.getConstructors()[0];
   const ctorParams = ctor?.getParameters() ?? [];
 
   const resolvedCtorParams = ctorParams.map(param => {
     const paramType = param.getType();
+    const paramFqn = paramType.getSymbol()?.getFullyQualifiedName();
 
     // Resolve on this module's bindings, first
-    const matchedBinding = module.bindings.find(binding =>
-      typesEqual(binding.ifaceType.getType(), paramType)
+    const matchedBinding = module.bindings.find(
+      binding => binding.iface.fqn === paramFqn
     );
 
     if (matchedBinding) {
@@ -80,7 +80,9 @@ export const createMethodBody = (
           );
         }
 
-        if (typesEqual(paramType, methodReturnType)) {
+        if (
+          methodReturnType.getSymbol()?.getFullyQualifiedName() === paramFqn
+        ) {
           return `this.${getPropertyNameForDependency(
             module,
             dep
@@ -93,7 +95,7 @@ export const createMethodBody = (
       param,
       `Module \`${
         module.name
-      }\` cannot be built, because there is no matching binding or dependency to resolve param \`${param.getName()}\` in \`${className}\``
+      }\` cannot be built:\n\n\tParameter \`${param.getName()}\` of class \`${className}\` cannot be resolved.`
     );
   });
 

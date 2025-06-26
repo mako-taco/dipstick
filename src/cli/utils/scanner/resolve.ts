@@ -2,7 +2,6 @@ import {
   ClassDeclaration,
   InterfaceDeclaration,
   Project,
-  SourceFile,
   Symbol,
   SyntaxKind,
   Type,
@@ -29,7 +28,7 @@ export const resolveType = (
     )
     .map(symbol => {
       const fqn = symbol.getFullyQualifiedName();
-      const execResult = /^\"(.*?)\"\./.exec(fqn);
+      const execResult = /^"(.*?)"\./.exec(fqn);
 
       return {
         name: symbol.getName(),

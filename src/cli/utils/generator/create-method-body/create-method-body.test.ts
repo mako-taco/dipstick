@@ -45,8 +45,14 @@ describe('createMethodBody', () => {
     return {
       name,
       bindType,
-      implType: implClass,
-      ifaceType: iface,
+      impl: {
+        declaration: implClass,
+        fqn: implClass.getSymbol()!.getFullyQualifiedName(),
+      },
+      iface: {
+        declaration: iface,
+        fqn: iface.getSymbol()!.getFullyQualifiedName(),
+      },
       pos: [0, 0],
     };
   };
@@ -239,8 +245,14 @@ describe('createMethodBody', () => {
       const serviceBinding: ProcessedBinding = {
         name: 'serviceBinding',
         bindType: 'transient',
-        implType: serviceClass,
-        ifaceType: serviceInterface,
+        impl: {
+          declaration: serviceClass,
+          fqn: serviceClass.getSymbol()!.getFullyQualifiedName(),
+        },
+        iface: {
+          declaration: serviceInterface,
+          fqn: serviceInterface.getSymbol()!.getFullyQualifiedName(),
+        },
         pos: [0, 0],
       };
 
@@ -278,7 +290,7 @@ describe('createMethodBody', () => {
         ErrorWithContext
       );
       expect(() => createMethodBody(module, serviceBinding)).toThrow(
-        /Module `TestModule` cannot be built.*repo.*ServiceWithOneParam/
+        /Module `TestModule` cannot be built:[\s\S]*Parameter `repo` of class `ServiceWithOneParam` cannot be resolved./
       );
     });
 
