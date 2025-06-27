@@ -53,7 +53,6 @@ describe('createMethodBody', () => {
         declaration: iface,
         fqn: iface.getSymbol()!.getFullyQualifiedName(),
       },
-      pos: [0, 0],
     };
   };
 
@@ -67,8 +66,7 @@ describe('createMethodBody', () => {
 
     return {
       text: name,
-      type: iface,
-      pos: [0, 0],
+      type: iface.getType(),
     };
   };
 
@@ -89,7 +87,7 @@ describe('createMethodBody', () => {
 
       const result = createMethodBody(module, binding);
 
-      expect(result).toBe('return this._options.static.testBinding;');
+      expect(result).toBe('return this._static.testBinding;');
     });
   });
 
@@ -111,9 +109,9 @@ describe('createMethodBody', () => {
       const result = createMethodBody(module, binding);
 
       expect(result).toBe(
-        'if (this._testBinding) return this._testBinding;\n' +
+        'if (this._reusable.testBinding) return this._reusable.testBinding;\n' +
           'const result = new ServiceWithNoParams();\n' +
-          'this._testBinding = result;\n' +
+          'this._reusable.testBinding = result;\n' +
           'return result;'
       );
     });
@@ -141,9 +139,9 @@ describe('createMethodBody', () => {
       const result = createMethodBody(module, serviceBinding);
 
       expect(result).toBe(
-        'if (this._serviceBinding) return this._serviceBinding;\n' +
+        'if (this._reusable.serviceBinding) return this._reusable.serviceBinding;\n' +
           'const result = new ServiceWithOneParam(this.repoBinding());\n' +
-          'this._serviceBinding = result;\n' +
+          'this._reusable.serviceBinding = result;\n' +
           'return result;'
       );
     });
@@ -219,7 +217,7 @@ describe('createMethodBody', () => {
       const result = createMethodBody(module, serviceBinding);
 
       expect(result).toBe(
-        'const result = new ServiceWithOneParam(this._options.dependencyModules[0].getRepository());\n' +
+        'const result = new ServiceWithOneParam(this._modules[0].getRepository());\n' +
           'return result;'
       );
     });
@@ -253,7 +251,6 @@ describe('createMethodBody', () => {
           declaration: serviceInterface,
           fqn: serviceInterface.getSymbol()!.getFullyQualifiedName(),
         },
-        pos: [0, 0],
       };
 
       const module: ProcessedModule = {
@@ -267,7 +264,7 @@ describe('createMethodBody', () => {
       // Service constructor expects (repo: IRepository, logger: ILogger)
       // Repository should come from local binding, Logger should come from dependency
       expect(result).toContain('new Service(this.repoBinding(),');
-      expect(result).toContain('this._options.dependencyModules[0].');
+      expect(result).toContain('this._modules[0].getLogger()');
     });
   });
 
@@ -312,8 +309,7 @@ describe('createMethodBody', () => {
 
       const invalidDependency: ProcessedDependency = {
         text: 'InvalidDep',
-        type: invalidInterface,
-        pos: [0, 0],
+        type: invalidInterface.getType(),
       };
 
       const serviceBinding = getProcessedBinding(

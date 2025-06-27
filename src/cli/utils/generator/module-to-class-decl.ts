@@ -8,7 +8,7 @@ import {
 } from 'ts-morph';
 import { ProcessedModule } from '../../types';
 import { createMethodBody } from './create-method-body/create-method-body';
-import { getPropertyNameForCachedBinding } from './property-names';
+import { getPropertyNameForReusableBinding } from './property-names';
 
 export const moduleToClassDecl = (
   module: ProcessedModule
@@ -65,7 +65,7 @@ export const moduleToClassDecl = (
       ...reusableBindings.map(
         binding =>
           ({
-            name: getPropertyNameForCachedBinding(binding),
+            name: getPropertyNameForReusableBinding(binding),
             type: binding.impl.declaration.getSymbol()?.getName(),
             hasQuestionToken: true,
             isReadonly: false,

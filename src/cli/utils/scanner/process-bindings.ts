@@ -44,7 +44,6 @@ export const foundModuleToProcessedBindings = (
       return {
         name: property.getName(),
         bindType,
-        pos: [property.getStart(), property.getEnd()],
         impl: {
           declaration: implTypeResult.resolvedType,
           fqn: implTypeResult.resolvedType.getSymbol()!.getFullyQualifiedName(),
@@ -71,6 +70,6 @@ const getBindingTypeFromProperty = (
       : propertyTypeText.indexOf('Static') !== -1
         ? 'static'
         : (() => {
-            throw new Error('Unknown binding type');
+            throw new CodegenError(property, 'Unknown binding type');
           })();
 };

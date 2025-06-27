@@ -29,7 +29,6 @@ export type ProcessedBinding =
           | TypeAliasDeclaration;
         fqn: string;
       };
-      pos: [number, number];
     }
   | {
       name: string;
@@ -48,13 +47,11 @@ export type ProcessedBinding =
           | TypeAliasDeclaration;
         fqn: string;
       };
-      pos: [number, number];
     };
 
 export type ProcessedDependency = {
   text: string;
-  type: InterfaceDeclaration | TypeAliasDeclaration;
-  pos: [number, number];
+  type: Type;
 };
 
 export interface ProcessedModule {

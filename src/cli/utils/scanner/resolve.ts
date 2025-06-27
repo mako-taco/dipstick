@@ -90,30 +90,3 @@ export const resolveTypeToClass = (
     resolvedType: result.resolvedType,
   };
 };
-
-export const resolveTypeToInterfaceOrTypeAlias = (
-  type: Type,
-  sourceFilePath: string,
-  project: Project
-):
-  | { error: null; resolvedType: InterfaceDeclaration | TypeAliasDeclaration }
-  | { error: string } => {
-  const result = resolveType(type, sourceFilePath, project);
-  if (result.error !== null) {
-    return result;
-  }
-
-  if (
-    !result.resolvedType.isKind(SyntaxKind.InterfaceDeclaration) &&
-    !result.resolvedType.isKind(SyntaxKind.TypeAliasDeclaration)
-  ) {
-    return {
-      error: `Resolved type ${result.resolvedType.getName()} is not an interface or type alias`,
-    };
-  }
-
-  return {
-    error: null,
-    resolvedType: result.resolvedType,
-  };
-};
