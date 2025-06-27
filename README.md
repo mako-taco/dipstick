@@ -97,7 +97,7 @@ app.use((req, res) => {
 })
 ```
 
-### Dependencies
+### Modularity & Composition
 
 Modules can depend on other modules. These dependencies are used to resolve types that the module cannot resolve itself:
 
