@@ -1,4 +1,4 @@
-import { FoundModule, ProcessedDependency } from '../../types';
+import { FoundModule, ProcessedDependency } from '../../../types';
 
 export const foundModuleToProcessedDependencies = (
   module: FoundModule

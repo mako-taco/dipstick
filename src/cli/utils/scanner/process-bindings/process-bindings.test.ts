@@ -1,7 +1,8 @@
 import { Project, SourceFile, SyntaxKind, TypeLiteralNode } from 'ts-morph';
-import { foundModuleToProcessedBindings } from './process-bindings';
-import { FoundModule } from '../../types';
+
+import { FoundModule } from '../../../types';
 import path from 'path';
+import { foundModuleToProcessedBindings } from './process-bindings';
 
 describe('process-bindings', () => {
   let project: Project;

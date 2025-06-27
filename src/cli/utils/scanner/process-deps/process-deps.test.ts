@@ -1,7 +1,7 @@
 import { Project, SourceFile, SyntaxKind, TupleTypeNode } from 'ts-morph';
-import { foundModuleToProcessedDependencies } from './process-deps';
-import { FoundModule } from '../../types';
 import path from 'path';
+import { FoundModule } from '../../../types';
+import { foundModuleToProcessedDependencies } from './process-deps';
 
 describe('process-deps', () => {
   let project: Project;

@@ -1,7 +1,7 @@
 import { Project, PropertySignature, SyntaxKind } from 'ts-morph';
-import { FoundModule, ProcessedBinding } from '../../types';
-import { CodegenError } from '../../error';
-import { resolveTypeToClass, resolveType } from './resolve';
+import { FoundModule, ProcessedBinding } from '../../../types';
+import { CodegenError } from '../../../error';
+import { resolveTypeToClass, resolveType } from '../resolve';
 
 export const foundModuleToProcessedBindings = (
   module: FoundModule,
