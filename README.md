@@ -61,32 +61,34 @@ export type MyModule = dip.Module<{
 }>;
 ```
 
-#### Module Bindings
+#### Static Bindings
 
-Module bindings are used to create child modules. A child module will use its parent to resolve dependencies that it cannot resolve itself:
+Static bindings are used to provide objects to a module when the module is instantiated. Use static bindings when you want to incorporate an object created outside of dipstick into a module so that it can be used as a dependency of other objects.
 
 ```typescript
-// Parent module
-export type ParentModule = dip.Module<{
+class RequestHandler {
+  constructor(req: Request, res: Response) {}
+
+  execute() {
+    res.send(200, `hello ${req.path}`)
+  }
+}
+
+export type RequestModule = dip.Module<{
   bindings: {
-    foo: dip.Bind.Reusable<Foo>;
+    // Created outside of this module
+    req: dip.Bind.Static<Request>;
+    res: dip.Bind.Static<Request>;
+
+    requestHandler: dip.Bind.Transient<RequestHandler>
   };
 }>;
 
-// Child module
-export type ChildModule = dip.Module<{
-  parent: ParentModule;
-  bindings: {
-    bar: dip.Bind.Transient<Bar>;
-  };
-}>;
-
-// Module that can create child modules
-export type ModuleFactory = dip.Module<{
-  bindings: {
-    createChild: dip.Bind.Module<ParentModule, ChildModule>;
-  };
-}>;
+app.use((req, res) => {
+  const module = new MyModule({req, res})
+  const handler = module.requestHandler()
+  handler.execute()
+})
 ```
 
 ### Dependencies
@@ -105,43 +107,17 @@ export type FooModule = dip.Module<{
 }>;
 
 export type BarModule = dip.Module<{
-  dependencies: [FooModule];
+  dependencies: [ FooModule ];
   bindings: {
     bar: dip.Bind.Transient<Bar>;
   };
 }>;
-```
 
-### Provided Dependencies
+const fooModule = new FooModule()
+const barModule = new BarModule([ fooModule ])
 
-Modules can have dependencies that are provided at construction time, using `Static` bindings. This is useful for creating scoped modules, such as request-scoped modules in a web application:
-
-```typescript
-// Request-scoped module which is a child of MainModule
-export type RequestModule = dip.Module<{
-  bindings: {
-    user: dip.Bind.Reusable<User>;
-    handler: dip.Bind.Reusable<RequestHandler>;
-    request: dip.bind.Static<Request>;
-    response: dip.bind.Static<Response>;
-  };
-}>;
-
-// A class that does things with objects from the request scope
-export class RequestHandler {
-  constructor(request: Request, response: Response);
-
-  run() {
-    response.send(200, request.headers['content-length']);
-  }
-}
-
-// Now when you get a request, create the child module
-app.use((request: Request, response: Response) => {
-  const mainModule = new RequestModule_Impl([], { request, response });
-  const handler = mainModule.requestModule({ request, response }).handler();
-  handler.run();
-});
+// if a module has both dependencies and static bindings, pass both:
+// const barModule = new BarModule({ baz: new Baz() }, [ fooModule ])
 ```
 
 ## Usage
@@ -153,9 +129,9 @@ app.use((request: Request, response: Response) => {
    ```
 3. Use the generated modules in your application:
    ```typescript
-   const parentModule = new ParentModule_Impl();
-   const requestModule = parentModule.createRequestModule(new Request());
-   const service = requestModule.requestService();
+   const myModule = new MyModuleImpl();
+   const service = myModule.myService();
+   ...
    ```
 
 ## Code Generation
