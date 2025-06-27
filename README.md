@@ -19,17 +19,20 @@ Dipstick uses TypeScript's type system and code generation to create dependency 
 
 ### Modules
 
-Modules are the core building blocks of Dipstick. They allow you to bind implementations to types that are used throughout your project. To create a module, export a type alias to `dip.Module`:
+Modules are the core building blocks of Dipstick. They allow you to bind implementations to types that are used throughout your project. An instance of a module is akin to a "scope" in other DI frameworks -- the module instance will hold references to [reusable bindings](https://github.com/mako-taco/dipstick/edit/main/README.md#reusable-bindings) and [static bindings](https://github.com/mako-taco/dipstick/edit/main/README.md#static-bindings). To create a module, export a type alias to `dip.Module`, and define its bindings:
 
 ```typescript
 import { dip } from 'dipstick';
 
 interface IFoo {}
 class Foo implements IFoo {}
+...
 
 export type MyModule = dip.Module<{
   bindings: {
     foo: dip.Bind.Reusable<Foo, IFoo>;
+    bar: dip.Bind.Transient<Bar, IBar>;
+    baz: dip.Bind.Reusable<Baz, IBaz>;
   };
 }>;
 ```
