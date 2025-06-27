@@ -1,11 +1,12 @@
+/* eslint-disable no-console */
 import { SourceFile } from 'ts-morph';
 
 export interface ILogger {
-  log(...args: any[]): void;
-  debug(...args: any[]): void;
-  info(...args: any[]): void;
-  warn(...args: any[]): void;
-  error(...args: any[]): void;
+  log(...args: unknown[]): void;
+  debug(...args: unknown[]): void;
+  info(...args: unknown[]): void;
+  warn(...args: unknown[]): void;
+  error(...args: unknown[]): void;
   errorWithContext(
     sourceFile: SourceFile,
     lineNumber: number,
@@ -16,29 +17,29 @@ export interface ILogger {
 export class Logger implements ILogger {
   constructor(private readonly verbose: boolean) {}
 
-  log(...args: any[]) {
+  log(...args: unknown[]) {
     if (this.verbose) {
       console.log(...args);
     }
   }
 
-  debug(...args: any[]) {
+  debug(...args: unknown[]) {
     if (this.verbose) {
       console.log(...args);
     }
   }
 
-  info(...args: any[]) {
+  info(...args: unknown[]) {
     if (this.verbose) {
       console.info(...args);
     }
   }
 
-  warn(...args: any[]) {
+  warn(...args: unknown[]) {
     console.warn(...args);
   }
 
-  error(...args: any[]) {
+  error(...args: unknown[]) {
     console.error(...args);
   }
 

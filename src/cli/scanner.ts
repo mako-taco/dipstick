@@ -91,7 +91,7 @@ export class Scanner {
   }
   private processModule(module: FoundModule): ProcessedModule {
     const dependencies: ProcessedDependency[] =
-      foundModuleToProcessedDependencies(module, this.project);
+      foundModuleToProcessedDependencies(module);
     const bindings: ProcessedBinding[] = foundModuleToProcessedBindings(
       module,
       this.project
