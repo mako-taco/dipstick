@@ -1,6 +1,9 @@
 # Dipstick
 
-A dependency injection framework for TypeScript that uses code generation to create type-safe dependency injection containers.
+Dipstick is a dependency injection framework for TypeScript. Instead of using `@Decorators` or unique strings to identify objects to the DI framework, Dipstick relies on the type system and code generation.
+The result is a DI framework that works with the strengths of typescript, instead of hacking around it's weaknesses.
+
+** No Decorators. No Names. Just Type-Safe DI. **
 
 ## Installation
 
