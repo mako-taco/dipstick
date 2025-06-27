@@ -1,23 +1,10 @@
-import { Node, SourceFile } from 'ts-morph';
+import { Node } from 'ts-morph';
 
 export class CodegenError extends Error {
-  constructor(node: Node, message: string);
-  constructor(sourceFile: SourceFile, pos: [number, number], message: string);
-  constructor(
-    sourceFileOrNode: SourceFile | Node,
-    posOrMessage: [number, number] | string,
-    maybeMessage?: string
-  ) {
-    const sourceFile =
-      sourceFileOrNode instanceof SourceFile
-        ? sourceFileOrNode
-        : sourceFileOrNode.getSourceFile();
+  constructor(node: Node, message: string) {
+    const sourceFile = node.getSourceFile();
     const fullText = sourceFile.getFullText();
-    const pos = Array.isArray(posOrMessage)
-      ? posOrMessage
-      : [sourceFileOrNode.getStart(), sourceFileOrNode.getEnd()];
-    const message =
-      typeof posOrMessage === 'string' ? posOrMessage : maybeMessage;
+    const pos = [node.getStart(), node.getEnd()];
 
     let idx = 0;
     let startLine = 0;

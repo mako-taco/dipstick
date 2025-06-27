@@ -14,8 +14,8 @@ import {
   ProcessedModuleGroup,
   ProcessedModuleGroupImport,
 } from './types';
-import { foundModuleToProcessedDependencies } from './utils/scanner/found-module-to-processed-deps';
-import { foundModuleToProcessedBindings } from './utils/scanner/found-module-to-processed-bindings';
+import { foundModuleToProcessedDependencies } from './utils/scanner/process-deps';
+import { foundModuleToProcessedBindings } from './utils/scanner/process-bindings';
 
 export class Scanner {
   constructor(

@@ -6,6 +6,7 @@ import {
 
 const DEPENDENCY_MODULE_PROPERTY_NAME = '_modules';
 const STATIC_BINDINGS_PROPERTY_NAME = '_static';
+const REUSABLE_BINDINGS_CACHE_PROPERTY_NAME = '_reusable';
 
 export const getPropertyNameForDependency = (
   module: ProcessedModule,
@@ -21,8 +22,8 @@ export const getPropertyNameForStaticBinding = (
   return `${STATIC_BINDINGS_PROPERTY_NAME}.${binding.name}`;
 };
 
-export const getPropertyNameForCachedBinding = (
+export const getPropertyNameForReusableBinding = (
   binding: ProcessedBinding
 ): string => {
-  return `_${binding.name}`;
+  return `${REUSABLE_BINDINGS_CACHE_PROPERTY_NAME}.${binding.name}`;
 };

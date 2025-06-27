@@ -3,6 +3,7 @@ import { ProcessedBinding, ProcessedModule } from '../../../types';
 
 import { CodegenError } from '../../../error';
 import {
+  getPropertyNameForReusableBinding,
   getPropertyNameForDependency,
   getPropertyNameForStaticBinding,
 } from '../property-names';
@@ -24,7 +25,9 @@ export const createMethodBody = (
   const lines = [];
 
   if (binding.bindType === 'reusable') {
-    lines.push(`if (this._${binding.name}) return this._${binding.name};`);
+    lines.push(
+      `if (this.${getPropertyNameForReusableBinding(binding)}) return this.${getPropertyNameForReusableBinding(binding)};`
+    );
   }
 
   if (binding.bindType === 'static') {
@@ -50,7 +53,7 @@ export const createMethodBody = (
     }
 
     for (const dep of module.dependencies) {
-      for (const prop of dep.type.getType().getProperties()) {
+      for (const prop of dep.type.getProperties()) {
         const propertyDecl = prop.getDeclarations()[0];
 
         const signature =
@@ -59,7 +62,7 @@ export const createMethodBody = (
 
         if (!signature) {
           throw new CodegenError(
-            dep.type,
+            propertyDecl,
             `Expected a property signature for \`${
               dep.text
             }.${prop.getName()}\``
@@ -73,7 +76,7 @@ export const createMethodBody = (
 
         if (!methodReturnType) {
           throw new CodegenError(
-            dep.type,
+            propertyDecl,
             `Expected a method signature with a return type for \`${
               dep.text
             }.${prop.getName()}\``
@@ -104,7 +107,7 @@ export const createMethodBody = (
   );
 
   if (binding.bindType === 'reusable') {
-    lines.push(`this._${binding.name} = result;`);
+    lines.push(`this.${getPropertyNameForReusableBinding(binding)} = result;`);
   }
 
   lines.push(`return result;`);

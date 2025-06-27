@@ -1,0 +1,4 @@
+# Unit testing
+When creating unit tests that require ts-morph structures, do not mock them.
+Instead, create a `__fixtures__` directory in the same directory as the test,
+and add `.ts` source files to it, which can then be parsed by ts-morph.
