@@ -1,4 +1,4 @@
-`# Dipstick
+# Dipstick
 
 A dependency injection framework for TypeScript that uses code generation to create type-safe dependency injection containers.
 
