@@ -97,6 +97,27 @@ app.use((req, res) => {
 })
 ```
 
+#### Binding Implementations to Interfaces
+
+All bindings take two type arguments. The first argumnent must be a class which will be instantiated by the binding. The second, optional argument is a type to return the instance as, such as an interface.
+
+```typescript
+export type MyModule = dip.Module<{
+  bindings: {
+    userIface: dip.Bind.Transient<User, IUser>
+    userImpl: dip.Bind.Transient<User>
+  }
+}>
+```
+
+```typescript
+const module = new MyModuleImpl()
+
+const userImpl = module.userImpl() // User
+const userIface = module.userIface() // IUser
+```
+
+
 ### Modularity & Composition
 
 Modules can depend on other modules. These dependencies are used to resolve types that the module cannot resolve itself:
