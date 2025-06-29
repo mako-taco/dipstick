@@ -1,4 +1,5 @@
-# Dipstick
+
+[![Chat-GPT-Image-Jun-29-2025-04-26-18-PM.png](https://i.postimg.cc/3xP7tyxd/Chat-GPT-Image-Jun-29-2025-04-26-18-PM.png)](https://postimg.cc/Sn7wsx8h)
 
 Dipstick is a dependency injection framework for TypeScript. Instead of using `@Decorators`, `reflect-metadata`, or unique strings to identify objects to the DI framework, Dipstick relies on the type system and code generation.
 The result is a DI framework that works with the strengths of typescript, instead of hacking around it's weaknesses.
