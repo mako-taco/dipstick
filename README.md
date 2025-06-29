@@ -49,7 +49,25 @@ export type MyModule = dip.Module<{
 
 ### Bindings
 
-Dipstick supports three types of bindings:
+Bindings allow modules to associate an implementation with a type. All bindings take two type arguments. The first argumnent must be a class which will be instantiated by the binding. The second, optional argument is a type to return the instance as, such as an interface. Within a single module, no two bindings may return the same type alias.
+
+```typescript
+export type MyModule = dip.Module<{
+  bindings: {
+    userIface: dip.Bind.Transient<User, IUser>
+    userImpl: dip.Bind.Transient<User>
+  }
+}>
+```
+
+```typescript
+const module = new MyModuleImpl()
+
+const userImpl = module.userImpl() // User
+const userIface = module.userIface() // IUser
+```
+
+Bindings come in three flavors, which are described below.
 
 #### Reusable Bindings
 
@@ -106,27 +124,6 @@ app.use((req, res) => {
   handler.execute()
 })
 ```
-
-#### Binding Implementations to Interfaces
-
-All bindings take two type arguments. The first argumnent must be a class which will be instantiated by the binding. The second, optional argument is a type to return the instance as, such as an interface.
-
-```typescript
-export type MyModule = dip.Module<{
-  bindings: {
-    userIface: dip.Bind.Transient<User, IUser>
-    userImpl: dip.Bind.Transient<User>
-  }
-}>
-```
-
-```typescript
-const module = new MyModuleImpl()
-
-const userImpl = module.userImpl() // User
-const userIface = module.userIface() // IUser
-```
-
 
 ### Modularity & Composition
 
@@ -194,6 +191,5 @@ For quick contributions:
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Run `npm run check && npm test`
+4. Run `npm run build && npm run check && npm test`
 5. Submit a Pull Request
-   `
