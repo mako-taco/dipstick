@@ -1,6 +1,7 @@
 import { Project, SourceFile, SyntaxKind, TypeLiteralNode } from 'ts-morph';
 
 import { FoundModule } from '../../../types';
+import { CodegenError } from '../../../error';
 import path from 'path';
 import { foundModuleToProcessedBindings } from './process-bindings';
 
@@ -127,6 +128,33 @@ describe('process-bindings', () => {
       const result = foundModuleToProcessedBindings(foundModule, project);
 
       expect(result).toEqual([]);
+    });
+
+    it('should throw error when two bindings have the same interface type', () => {
+      const bindings = getBindingsFromTypeAlias('DuplicateInterfaceBindings');
+
+      const foundModule: FoundModule = {
+        name: 'DuplicateModule',
+        filePath: path.join(
+          __dirname,
+          '__fixtures__/test-modules-dupe-binding.ts'
+        ),
+        bindings,
+      };
+
+      expect(() => {
+        foundModuleToProcessedBindings(foundModule, project);
+      }).toThrow(CodegenError);
+
+      try {
+        foundModuleToProcessedBindings(foundModule, project);
+        fail('Expected CodegenError to be thrown');
+      } catch (error) {
+        expect(error).toBeInstanceOf(CodegenError);
+        expect((error as CodegenError).message).toContain(
+          'Binding testService2 conflicts with testService1. Bindings on the same module must return unique type aliases.'
+        );
+      }
     });
   });
 
