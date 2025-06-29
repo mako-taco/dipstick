@@ -1,4 +1,4 @@
-import { dip } from '../../../../lib';
+import { dip } from '../../../../../lib/index';
 
 // Types and classes for testing
 export interface ITestService {

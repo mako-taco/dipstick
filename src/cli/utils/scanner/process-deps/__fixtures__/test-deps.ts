@@ -1,4 +1,4 @@
-import { dip } from '../../../../lib';
+import { dip } from '../../../../../lib/index';
 
 export type ModuleA = dip.Module<{}>;
 
