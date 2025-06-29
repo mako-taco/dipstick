@@ -7,7 +7,7 @@ export const foundModuleToProcessedBindings = (
   module: FoundModule,
   project: Project
 ): ProcessedBinding[] => {
-  return (
+  const processedBindings =
     module.bindings?.getProperties().map(property => {
       const bindType = getBindingTypeFromProperty(property);
       const typeArgs = property
@@ -55,8 +55,21 @@ export const foundModuleToProcessedBindings = (
             .getFullyQualifiedName(),
         },
       } as ProcessedBinding; // TODO
-    }) ?? []
-  );
+    }) ?? [];
+
+  // Prevent two bindings on the same module which return the same type
+  for (let i = 1; i < processedBindings.length; i++) {
+    for (let j = 0; j < i; j++) {
+      if (processedBindings[i].iface.fqn === processedBindings[j].iface.fqn) {
+        throw new CodegenError(
+          processedBindings[i].iface.declaration,
+          `Binding ${processedBindings[i].name} conflicts with ${processedBindings[j].name}. Bindings on the same module must return unique type aliases.`
+        );
+      }
+    }
+  }
+
+  return processedBindings;
 };
 
 const getBindingTypeFromProperty = (

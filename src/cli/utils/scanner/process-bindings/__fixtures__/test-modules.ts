@@ -50,3 +50,9 @@ export type MultiBindings = {
   logger: dip.Bind.Transient<Logger, ILogger>;
   config: dip.Bind.Static<ITestService>;
 };
+
+// Type with duplicate interface types - should cause error
+export type DuplicateInterfaceBindings = {
+  testService1: dip.Bind.Reusable<TestService, ITestService>;
+  testService2: dip.Bind.Transient<TestService, ITestService>;
+};
