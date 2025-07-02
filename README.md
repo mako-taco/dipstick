@@ -33,7 +33,7 @@ Dipstick uses TypeScript's type system and code generation to create dependency 
 Containers are the core building blocks of Dipstick. They allow you to bind implementations to types that are used throughout your project. An instance of a container is akin to a "scope" in other DI frameworks -- the container instance will hold references to [reusable bindings](https://github.com/mako-taco/dipstick/edit/main/README.md#reusable-bindings) and [static bindings](https://github.com/mako-taco/dipstick/edit/main/README.md#static-bindings). To create a container, export a type alias to `Container`, and define its bindings:
 
 ```typescript
-import { dip } from 'dipstick';
+import { Container, Reusable, Transient } from 'dipstick';
 
 interface IFoo {}
 class Foo implements IFoo {}
