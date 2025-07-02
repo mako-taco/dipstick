@@ -1,4 +1,4 @@
-import { dip } from '../../../../../lib/index';
+import { Reusable, Static, Transient } from '../../../../../lib/index';
 
 // Types and classes for testing
 export interface ITestService {
@@ -34,25 +34,25 @@ export class Logger implements ILogger {
 
 // Type literal structures for testing bindings
 export type ReusableBindings = {
-  testService: dip.Bind.Reusable<TestService>;
+  testService: Reusable<TestService>;
 };
 
 export type TransientBindings = {
-  testService: dip.Bind.Transient<TestService, ITestService>;
+  testService: Transient<TestService, ITestService>;
 };
 
 export type StaticBindings = {
-  testService: dip.Bind.Static<ITestService>;
+  testService: Static<ITestService>;
 };
 
 export type MultiBindings = {
-  repository: dip.Bind.Reusable<Repository>;
-  logger: dip.Bind.Transient<Logger, ILogger>;
-  config: dip.Bind.Static<ITestService>;
+  repository: Reusable<Repository>;
+  logger: Transient<Logger, ILogger>;
+  config: Static<ITestService>;
 };
 
 // Type with duplicate interface types - should cause error
 export type DuplicateInterfaceBindings = {
-  testService1: dip.Bind.Reusable<TestService, ITestService>;
-  testService2: dip.Bind.Transient<TestService, ITestService>;
+  testService1: Reusable<TestService, ITestService>;
+  testService2: Transient<TestService, ITestService>;
 };

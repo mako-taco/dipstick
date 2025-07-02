@@ -7,15 +7,15 @@ import {
 } from 'ts-morph';
 import { ILogger } from './logger';
 import {
-  FoundModule,
+  FoundContainer,
   ProcessedBinding,
   ProcessedDependency,
-  ProcessedModule,
-  ProcessedModuleGroup,
-  ProcessedModuleGroupImport,
+  ProcessedContainer,
+  ProcessedContainerGroup,
+  ProcessedContainerGroupImport,
 } from './types';
-import { foundModuleToProcessedDependencies } from './utils/scanner/process-deps/process-deps';
-import { foundModuleToProcessedBindings } from './utils/scanner/process-bindings/process-bindings';
+import { foundContainerToProcessedDependencies } from './utils/scanner/process-deps/process-deps';
+import { foundContainerToProcessedBindings } from './utils/scanner/process-bindings/process-bindings';
 
 export class Scanner {
   constructor(
@@ -32,16 +32,16 @@ export class Scanner {
     this.logger.debug(`Skipping ${location} | ${message}`);
   }
 
-  public findModules(): ProcessedModuleGroup[] {
+  public findContainers(): ProcessedContainerGroup[] {
     const sourceFiles = this.project.getSourceFiles();
-    const foundModules: FoundModule[] = sourceFiles
-      .flatMap(sourceFile => this.findModulesInSourceFile(sourceFile))
+    const foundContainers: FoundContainer[] = sourceFiles
+      .flatMap(sourceFile => this.findContainersInSourceFile(sourceFile))
       .filter(m => m !== null);
 
-    const byFilePath = this.groupModulesByFilePath(foundModules);
+    const byFilePath = this.groupContainersByFilePath(foundContainers);
 
     return Array.from(byFilePath.entries()).map(
-      ([filePath, modules]: [string, FoundModule[]]) => {
+      ([filePath, modules]: [string, FoundContainer[]]) => {
         if (!filePath.endsWith('.ts') && !filePath.endsWith('.tsx')) {
           throw new Error(
             `Invalid file extension for module file: ${filePath}. Expected .ts or .tsx`
@@ -54,7 +54,7 @@ export class Scanner {
           this.project.createSourceFile(generatedFilePath);
 
         const sourceFile = this.project.getSourceFileOrThrow(filePath);
-        const imports: ProcessedModuleGroupImport[] = sourceFile
+        const imports: ProcessedContainerGroupImport[] = sourceFile
           .getImportDeclarations()
           .map(sourceImport => ({
             namedImports: sourceImport.getNamedImports().map(ni => {
@@ -83,16 +83,16 @@ export class Scanner {
         return {
           sourceFilePath: filePath,
           filePath: generatedFilePath,
-          modules: modules.map(module => this.processModule(module)),
+          modules: modules.map(module => this.processContainer(module)),
           imports,
         };
       }
     );
   }
-  private processModule(module: FoundModule): ProcessedModule {
+  private processContainer(module: FoundContainer): ProcessedContainer {
     const dependencies: ProcessedDependency[] =
-      foundModuleToProcessedDependencies(module);
-    const bindings: ProcessedBinding[] = foundModuleToProcessedBindings(
+      foundContainerToProcessedDependencies(module);
+    const bindings: ProcessedBinding[] = foundContainerToProcessedBindings(
       module,
       this.project
     );
@@ -104,9 +104,9 @@ export class Scanner {
     };
   }
 
-  private groupModulesByFilePath(
-    modules: FoundModule[]
-  ): Map<string, FoundModule[]> {
+  private groupContainersByFilePath(
+    modules: FoundContainer[]
+  ): Map<string, FoundContainer[]> {
     return modules.reduce((acc, module) => {
       const filePath = module.filePath;
       if (!acc.get(filePath)) {
@@ -114,10 +114,10 @@ export class Scanner {
       }
       acc.get(filePath)!.push(module);
       return acc;
-    }, new Map<string, FoundModule[]>());
+    }, new Map<string, FoundContainer[]>());
   }
 
-  private findModulesInSourceFile(sourceFile: SourceFile): FoundModule[] {
+  private findContainersInSourceFile(sourceFile: SourceFile): FoundContainer[] {
     // Skip declaration files and node_modules
     if (
       sourceFile.isDeclarationFile() ||
@@ -130,17 +130,17 @@ export class Scanner {
     const typeAliases = sourceFile.getTypeAliases();
 
     return typeAliases
-      .map(typeAlias => this.convertTypeAliasToFoundModule(typeAlias))
+      .map(typeAlias => this.convertTypeAliasToFoundContainer(typeAlias))
       .filter(m => m !== null)
-      .map(processedModule => ({
-        ...processedModule,
+      .map(processedContainer => ({
+        ...processedContainer,
         filePath: sourceFile.getFilePath(),
       }));
   }
 
-  private convertTypeAliasToFoundModule(
+  private convertTypeAliasToFoundContainer(
     typeAlias: TypeAliasDeclaration
-  ): Omit<FoundModule, 'filePath'> | null {
+  ): Omit<FoundContainer, 'filePath'> | null {
     const typeNode = typeAlias.getTypeNode();
 
     // Skip non-exported type aliases
@@ -154,15 +154,15 @@ export class Scanner {
       return null;
     }
 
-    // Check if this is a type reference (e.g., dip.Module<...>)
+    // Check if this is a type reference (e.g., Container<...>)
     if (!Node.isTypeReference(typeNode)) {
       this.logSkipped(typeNode, 'TypeNode is not a TypeReference');
       return null;
     }
 
     const typeName = typeNode.getTypeName().getText();
-    if (typeName !== 'dip.Module') {
-      this.logSkipped(typeNode, 'Expected dip.Module, found ${typeName}');
+    if (typeName !== 'Container') {
+      this.logSkipped(typeNode, 'Expected Container, found ${typeName}');
       return null;
     }
 

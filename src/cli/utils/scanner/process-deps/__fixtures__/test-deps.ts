@@ -1,17 +1,17 @@
-import { dip } from '../../../../../lib/index';
+import { Container } from '../../../../../lib/index';
 
-export type ModuleA = dip.Module<{}>;
+export type ContainerA = Container<{}>;
 
-export type ModuleB = dip.Module<{ dependencies: DepsB }>;
+export type ContainerB = Container<{ dependencies: DepsB }>;
 
-export type ModuleC = dip.Module<{
+export type ContainerC = Container<{
   dependencies: DepsC;
 }>;
 
-export type ModuleD = dip.Module<{
+export type ContainerD = Container<{
   dependencies: DepsD;
 }>;
 
-export type DepsB = [ModuleA];
-export type DepsC = [ModuleA, ModuleB];
-export type DepsD = [ModuleA, ModuleB, ModuleC];
+export type DepsB = [ContainerA];
+export type DepsC = [ContainerA, ContainerB];
+export type DepsD = [ContainerA, ContainerB, ContainerC];

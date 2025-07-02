@@ -1,5 +1,5 @@
 import { SyntaxKind } from 'ts-morph';
-import { ProcessedBinding, ProcessedModule } from '../../../types';
+import { ProcessedBinding, ProcessedContainer } from '../../../types';
 
 import { CodegenError } from '../../../error';
 import {
@@ -19,7 +19,7 @@ import {
  * 2. This module's dependencies bindings, in the order the dependency modules are listed in the module's `dependencies` property
  */
 export const createMethodBody = (
-  module: ProcessedModule,
+  module: ProcessedContainer,
   binding: ProcessedBinding
 ): string => {
   const lines = [];
@@ -96,7 +96,7 @@ export const createMethodBody = (
 
     throw new CodegenError(
       param,
-      `Module \`${
+      `Container \`${
         module.name
       }\` cannot be built:\n\n\tParameter \`${param.getName()}\` of class \`${className}\` cannot be resolved.`
     );

@@ -23,7 +23,7 @@ program
 
     logger.info(`Scanning for modules in ${tsconfig}...`);
 
-    const moduleGroups = scanner.findModules();
+    const moduleGroups = scanner.findContainers();
 
     logger.info(`↳ Found ${moduleGroups.length} files with modules in them.`);
 

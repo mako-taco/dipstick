@@ -1,10 +1,10 @@
 import { Project, PropertySignature, SyntaxKind } from 'ts-morph';
-import { FoundModule, ProcessedBinding } from '../../../types';
+import { FoundContainer, ProcessedBinding } from '../../../types';
 import { CodegenError } from '../../../error';
 import { resolveTypeToClass, resolveType } from '../resolve';
 
-export const foundModuleToProcessedBindings = (
-  module: FoundModule,
+export const foundContainerToProcessedBindings = (
+  module: FoundContainer,
   project: Project
 ): ProcessedBinding[] => {
   const processedBindings =
@@ -18,7 +18,7 @@ export const foundModuleToProcessedBindings = (
       if (!typeArgs) {
         throw new CodegenError(
           property,
-          `Could not find type arguments for binding ${property.getName()}. Bindings MUST be in the form of 'name: dip.Bind.(Reusable|Static|Transient)<T>`
+          `Could not find type arguments for binding ${property.getName()}. Bindings MUST be in the form of 'name: (Reusable|Static|Transient)<T>`
         );
       }
 

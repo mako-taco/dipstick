@@ -1,4 +1,4 @@
-import { dip } from '../../../../../lib/index';
+import { Reusable, Transient } from '../../../../../lib/index';
 
 export interface IFace {
   hello(): string;
@@ -18,6 +18,6 @@ export class Impl1 implements IFace {
 
 // Type with duplicate interface types - should cause error
 export type DuplicateInterfaceBindings = {
-  testService1: dip.Bind.Reusable<Impl0, IFace>;
-  testService2: dip.Bind.Transient<Impl1, IFace>;
+  testService1: Reusable<Impl0, IFace>;
+  testService2: Transient<Impl1, IFace>;
 };

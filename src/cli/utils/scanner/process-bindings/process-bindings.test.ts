@@ -1,9 +1,9 @@
 import { Project, SourceFile, SyntaxKind, TypeLiteralNode } from 'ts-morph';
 
-import { FoundModule } from '../../../types';
+import { FoundContainer } from '../../../types';
 import { CodegenError } from '../../../error';
 import path from 'path';
-import { foundModuleToProcessedBindings } from './process-bindings';
+import { foundContainerToProcessedBindings } from './process-bindings';
 
 describe('process-bindings', () => {
   let project: Project;
@@ -42,18 +42,18 @@ describe('process-bindings', () => {
     return typeLiteral;
   };
 
-  describe('foundModuleToProcessedBindings', () => {
+  describe('foundContainerToProcessedBindings', () => {
     it('should process reusable bindings with single type argument', () => {
       const bindings = getBindingsFromTypeAlias('ReusableBindings');
 
-      const foundModule: FoundModule = {
-        name: 'ReusableModule',
+      const foundContainer: FoundContainer = {
+        name: 'ReusableContainer',
         filePath: path.join(__dirname, '__fixtures__/test-modules.ts'),
         bindings,
       };
 
       // Let the real resolve functions work with the fixture types
-      const result = foundModuleToProcessedBindings(foundModule, project);
+      const result = foundContainerToProcessedBindings(foundContainer, project);
 
       expect(result).toHaveLength(1);
       expect(result[0].name).toBe('testService');
@@ -65,13 +65,13 @@ describe('process-bindings', () => {
     it('should process transient bindings with two type arguments', () => {
       const bindings = getBindingsFromTypeAlias('TransientBindings');
 
-      const foundModule: FoundModule = {
-        name: 'TransientModule',
+      const foundContainer: FoundContainer = {
+        name: 'TransientContainer',
         filePath: path.join(__dirname, '__fixtures__/test-modules.ts'),
         bindings,
       };
 
-      const result = foundModuleToProcessedBindings(foundModule, project);
+      const result = foundContainerToProcessedBindings(foundContainer, project);
 
       expect(result).toHaveLength(1);
       expect(result[0].name).toBe('testService');
@@ -83,13 +83,13 @@ describe('process-bindings', () => {
     it('should process static bindings', () => {
       const bindings = getBindingsFromTypeAlias('StaticBindings');
 
-      const foundModule: FoundModule = {
-        name: 'StaticModule',
+      const foundContainer: FoundContainer = {
+        name: 'StaticContainer',
         filePath: path.join(__dirname, '__fixtures__/test-modules.ts'),
         bindings,
       };
 
-      const result = foundModuleToProcessedBindings(foundModule, project);
+      const result = foundContainerToProcessedBindings(foundContainer, project);
 
       expect(result).toHaveLength(1);
       expect(result[0].name).toBe('testService');
@@ -101,13 +101,13 @@ describe('process-bindings', () => {
     it('should handle multiple bindings', () => {
       const bindings = getBindingsFromTypeAlias('MultiBindings');
 
-      const foundModule: FoundModule = {
-        name: 'MultiBindingModule',
+      const foundContainer: FoundContainer = {
+        name: 'MultiBindingContainer',
         filePath: path.join(__dirname, '__fixtures__/test-modules.ts'),
         bindings,
       };
 
-      const result = foundModuleToProcessedBindings(foundModule, project);
+      const result = foundContainerToProcessedBindings(foundContainer, project);
 
       expect(result).toHaveLength(3);
 
@@ -119,13 +119,13 @@ describe('process-bindings', () => {
     });
 
     it('should return empty array when no bindings property exists', () => {
-      const foundModule: FoundModule = {
-        name: 'EmptyModule',
+      const foundContainer: FoundContainer = {
+        name: 'EmptyContainer',
         filePath: path.join(__dirname, '__fixtures__/test-modules.ts'),
         // No bindings property
       };
 
-      const result = foundModuleToProcessedBindings(foundModule, project);
+      const result = foundContainerToProcessedBindings(foundContainer, project);
 
       expect(result).toEqual([]);
     });
@@ -133,8 +133,8 @@ describe('process-bindings', () => {
     it('should throw error when two bindings have the same interface type', () => {
       const bindings = getBindingsFromTypeAlias('DuplicateInterfaceBindings');
 
-      const foundModule: FoundModule = {
-        name: 'DuplicateModule',
+      const foundContainer: FoundContainer = {
+        name: 'DuplicateContainer',
         filePath: path.join(
           __dirname,
           '__fixtures__/test-modules-dupe-binding.ts'
@@ -143,11 +143,11 @@ describe('process-bindings', () => {
       };
 
       expect(() => {
-        foundModuleToProcessedBindings(foundModule, project);
+        foundContainerToProcessedBindings(foundContainer, project);
       }).toThrow(CodegenError);
 
       try {
-        foundModuleToProcessedBindings(foundModule, project);
+        foundContainerToProcessedBindings(foundContainer, project);
         fail('Expected CodegenError to be thrown');
       } catch (error) {
         expect(error).toBeInstanceOf(CodegenError);
@@ -163,39 +163,39 @@ describe('process-bindings', () => {
     it('should correctly identify reusable binding type', () => {
       const bindings = getBindingsFromTypeAlias('ReusableBindings');
 
-      const foundModule: FoundModule = {
-        name: 'ReusableModule',
+      const foundContainer: FoundContainer = {
+        name: 'ReusableContainer',
         filePath: path.join(__dirname, '__fixtures__/test-modules.ts'),
         bindings,
       };
 
-      const result = foundModuleToProcessedBindings(foundModule, project);
+      const result = foundContainerToProcessedBindings(foundContainer, project);
       expect(result[0].bindType).toBe('reusable');
     });
 
     it('should correctly identify transient binding type', () => {
       const bindings = getBindingsFromTypeAlias('TransientBindings');
 
-      const foundModule: FoundModule = {
-        name: 'TransientModule',
+      const foundContainer: FoundContainer = {
+        name: 'TransientContainer',
         filePath: path.join(__dirname, '__fixtures__/test-modules.ts'),
         bindings,
       };
 
-      const result = foundModuleToProcessedBindings(foundModule, project);
+      const result = foundContainerToProcessedBindings(foundContainer, project);
       expect(result[0].bindType).toBe('transient');
     });
 
     it('should correctly identify static binding type', () => {
       const bindings = getBindingsFromTypeAlias('StaticBindings');
 
-      const foundModule: FoundModule = {
-        name: 'StaticModule',
+      const foundContainer: FoundContainer = {
+        name: 'StaticContainer',
         filePath: path.join(__dirname, '__fixtures__/test-modules.ts'),
         bindings,
       };
 
-      const result = foundModuleToProcessedBindings(foundModule, project);
+      const result = foundContainerToProcessedBindings(foundContainer, project);
       expect(result[0].bindType).toBe('static');
     });
   });

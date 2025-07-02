@@ -6,7 +6,7 @@ The result is a DI framework that works with the strengths of typescript, instea
 
 **Simple.**
 
-Unlike other DI frameworks, which can sometimes feel like learning an entirely new language, learning Dipstick only requires understanding two concepts: Modules and Bindings.
+Unlike other DI frameworks, which can sometimes feel like learning an entirely new language, learning Dipstick only requires understanding two concepts: Containers and Bindings.
 
 **Obvious.**
 
@@ -14,7 +14,7 @@ The [principle of least surprise](https://en.wikipedia.org/wiki/Principle_of_lea
 
 **Type Safe.**
 
-Dipstick works with the type system, instead of around it. Use the same Module types you declared to generate code in your integration tests to provide mocks for specific Modules. Don't worry about a DI framework spreading `any` throughout your codebase -- the types that come out of Dipstick are exactly as strong as you author them to be.
+Dipstick works with the type system, instead of around it. Use the same Container types you declared to generate code in your integration tests to provide mocks for specific Containers. Don't worry about a DI framework spreading `any` throughout your codebase -- the types that come out of Dipstick are exactly as strong as you author them to be.
 
 ## Installation
 
@@ -28,9 +28,9 @@ Dipstick uses TypeScript's type system and code generation to create dependency 
 
 ## Core Concepts
 
-### Modules
+### Containers
 
-Modules are the core building blocks of Dipstick. They allow you to bind implementations to types that are used throughout your project. An instance of a module is akin to a "scope" in other DI frameworks -- the module instance will hold references to [reusable bindings](https://github.com/mako-taco/dipstick/edit/main/README.md#reusable-bindings) and [static bindings](https://github.com/mako-taco/dipstick/edit/main/README.md#static-bindings). To create a module, export a type alias to `dip.Module`, and define its bindings:
+Containers are the core building blocks of Dipstick. They allow you to bind implementations to types that are used throughout your project. An instance of a container is akin to a "scope" in other DI frameworks -- the container instance will hold references to [reusable bindings](https://github.com/mako-taco/dipstick/edit/main/README.md#reusable-bindings) and [static bindings](https://github.com/mako-taco/dipstick/edit/main/README.md#static-bindings). To create a container, export a type alias to `Container`, and define its bindings:
 
 ```typescript
 import { dip } from 'dipstick';
@@ -39,46 +39,46 @@ interface IFoo {}
 class Foo implements IFoo {}
 ...
 
-export type MyModule = dip.Module<{
+export type MyContainer = Container<{
   bindings: {
-    foo: dip.Bind.Reusable<Foo, IFoo>;
-    bar: dip.Bind.Transient<Bar, IBar>;
-    baz: dip.Bind.Reusable<Baz, IBaz>;
+    foo: Reusable<Foo, IFoo>;
+    bar: Transient<Bar, IBar>;
+    baz: Reusable<Baz, IBaz>;
   };
 }>;
 ```
 
 ### Bindings
 
-Bindings allow modules to associate an implementation with a type. All bindings take two type arguments. The first argumnent must be a class which will be instantiated by the binding. The second, optional argument is a type to return the instance as, such as an interface. Within a single module, no two bindings may return the same type alias.
+Bindings allow containers to associate an implementation with a type. All bindings take two type arguments. The first argumnent must be a class which will be instantiated by the binding. The second, optional argument is a type to return the instance as, such as an interface. Within a single container, no two bindings may return the same type alias.
 
 ```typescript
-export type MyModule = dip.Module<{
+export type MyContainer = Container<{
   bindings: {
-    userIface: dip.Bind.Transient<User, IUser>
-    userImpl: dip.Bind.Transient<User>
+    userIface: Transient<User, IUser>
+    userImpl: Transient<User>
   }
 }>
 ```
 
 ```typescript
-const module = new MyModuleImpl()
+const container = new MyContainerImpl()
 
-const userImpl = module.userImpl() // User
-const userIface = module.userIface() // IUser
+const userImpl = container.userImpl() // User
+const userIface = container.userIface() // IUser
 ```
 
 Bindings come in three flavors, which are described below.
 
 #### Reusable Bindings
 
-Reusable bindings return the same instance every time they are called. This is useful for singletons or other objects that should only be created once per module:
+Reusable bindings return the same instance every time they are called. This is useful for singletons or other objects that should only be created once per container:
 
 ```typescript
-export type MyModule = dip.Module<{
+export type MyContainer = Container<{
   bindings: {
     // Returns the same Foo instance every time
-    foo: dip.Bind.Reusable<Foo, IFoo>;
+    foo: Reusable<Foo, IFoo>;
   };
 }>;
 ```
@@ -88,17 +88,17 @@ export type MyModule = dip.Module<{
 Transient bindings return a new instance every time they are called. This is useful for objects that should be created fresh each time they are requested:
 
 ```typescript
-export type MyModule = dip.Module<{
+export type MyContainer = Container<{
   bindings: {
     // Returns a new Bar instance every time
-    bar: dip.Bind.Transient<Bar>;
+    bar: Transient<Bar>;
   };
 }>;
 ```
 
 #### Static Bindings
 
-Static bindings are used to provide objects to a module when the module is instantiated. Use static bindings when you want to incorporate an object created outside of dipstick into a module so that it can be used as a dependency of other objects.
+Static bindings are used to provide objects to a container when the container is instantiated. Use static bindings when you want to incorporate an object created outside of dipstick into a container so that it can be used as a dependency of other objects.
 
 ```typescript
 class RequestHandler {
@@ -109,63 +109,63 @@ class RequestHandler {
   }
 }
 
-export type RequestModule = dip.Module<{
+export type RequestContainer = Container<{
   bindings: {
-    // Created outside of this module
-    req: dip.Bind.Static<Request>;
-    res: dip.Bind.Static<Request>;
+    // Created outside of this container
+    req: Static<Request>;
+    res: Static<Request>;
 
-    requestHandler: dip.Bind.Transient<RequestHandler>
+    requestHandler: Transient<RequestHandler>
   };
 }>;
 
 app.use((req, res) => {
-  const module = new MyModule({req, res})
-  const handler = module.requestHandler()
+  const container = new MyContainer({req, res})
+  const handler = container.requestHandler()
   handler.execute()
 })
 ```
 
 ### Modularity & Composition
 
-Modules can depend on other modules. These dependencies are used to resolve types that the module cannot resolve itself:
+Containers can depend on other containers. These dependencies are used to resolve types that the container cannot resolve itself:
 
 ```typescript
 class Foo {
   constructor(bar: Bar) {}
 }
 
-export type FooModule = dip.Module<{
+export type FooContainer = Container<{
   bindings: {
-    foo: dip.Bind.Reusable<Foo>;
+    foo: Reusable<Foo>;
   };
 }>;
 
-export type BarModule = dip.Module<{
-  dependencies: [ FooModule ];
+export type BarContainer = Container<{
+  dependencies: [ FooContainer ];
   bindings: {
-    bar: dip.Bind.Transient<Bar>;
+    bar: Transient<Bar>;
   };
 }>;
 
-const fooModule = new FooModule()
-const barModule = new BarModule([ fooModule ])
+const fooContainer = new FooContainer()
+const barContainer = new BarContainer([ fooContainer ])
 
-// if a module has both dependencies and static bindings, pass both:
-// const barModule = new BarModule({ baz: new Baz() }, [ fooModule ])
+// if a container has both dependencies and static bindings, pass both:
+// const barContainer = new BarContainer({ baz: new Baz() }, [ fooContainer ])
 ```
 
 ## Usage
 
-1. Define your modules using type aliases to `dip.Module`
+1. Define your containers using type aliases to `Container`
 2. Run the code generator:
    ```bash
    npm exec -- dipstick generate ./path/to/tsconfig.json --verbose
    ```
-3. Use the generated modules in your application:
+3. Use the generated containers in your application:
    ```typescript
-   const myModule = new MyModuleImpl();
-   const service = myModule.myService();
+   const myContainer = new MyContainerImpl();
+   const service = myContainer.myService();
    ...
    ```
 
@@ -173,8 +173,8 @@ const barModule = new BarModule([ fooModule ])
 
 The code generator will:
 
-1. Scan your TypeScript files for exported module type aliases
-2. Generate implementation classes for each module
+1. Scan your TypeScript files for exported container type aliases
+2. Generate implementation classes for each container
 3. Handle dependency injection and binding resolution
 4. Ensure type safety throughout the dependency graph
 

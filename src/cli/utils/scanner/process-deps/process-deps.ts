@@ -1,7 +1,7 @@
-import { FoundModule, ProcessedDependency } from '../../../types';
+import { FoundContainer, ProcessedDependency } from '../../../types';
 
-export const foundModuleToProcessedDependencies = (
-  module: FoundModule
+export const foundContainerToProcessedDependencies = (
+  module: FoundContainer
 ): ProcessedDependency[] => {
   return (
     module.dependencies?.getElements().map(element => {

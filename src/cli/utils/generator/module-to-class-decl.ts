@@ -6,12 +6,12 @@ import {
   PropertyDeclarationStructure,
   Scope,
 } from 'ts-morph';
-import { ProcessedModule } from '../../types';
+import { ProcessedContainer } from '../../types';
 import { createMethodBody } from './create-method-body/create-method-body';
 import { getPropertyNameForReusableBinding } from './property-names';
 
 export const moduleToClassDecl = (
-  module: ProcessedModule
+  module: ProcessedContainer
 ): OptionalKind<ClassDeclarationStructure> => {
   const reusableBindings = module.bindings.filter(
     binding => binding.bindType === 'reusable'
@@ -28,7 +28,7 @@ export const moduleToClassDecl = (
     )
     .join('; ')}}>`;
 
-  const dependencyModulesType = `readonly [${module.dependencies
+  const dependencyContainersType = `readonly [${module.dependencies
     .map(dep => dep.text)
     .join(', ')}]`;
 
@@ -37,7 +37,7 @@ export const moduleToClassDecl = (
       ? { name: '_static', type: staticBindingsType }
       : null,
     module.dependencies.length > 0
-      ? { name: '_modules', type: dependencyModulesType }
+      ? { name: '_modules', type: dependencyContainersType }
       : null,
   ].filter(prop => prop !== null);
 

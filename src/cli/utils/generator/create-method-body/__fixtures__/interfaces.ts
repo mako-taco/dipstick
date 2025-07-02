@@ -10,7 +10,7 @@ export interface ILogger {
   log(message: string): void;
 }
 
-export interface IDependencyModule {
+export interface IDependencyContainer {
   getService(): IService;
   getRepository(): IRepository;
   getLogger(): ILogger;

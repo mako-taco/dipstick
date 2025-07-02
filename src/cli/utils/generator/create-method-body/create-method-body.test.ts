@@ -2,7 +2,7 @@ import { Project, SourceFile } from 'ts-morph';
 import { createMethodBody } from './create-method-body';
 import {
   ProcessedBinding,
-  ProcessedModule,
+  ProcessedContainer,
   ProcessedDependency,
 } from '../../../types';
 import { CodegenError } from '../../../error';
@@ -79,8 +79,8 @@ describe('createMethodBody', () => {
         'IService'
       );
 
-      const module: ProcessedModule = {
-        name: 'TestModule',
+      const module: ProcessedContainer = {
+        name: 'TestContainer',
         dependencies: [],
         bindings: [binding],
       };
@@ -100,8 +100,8 @@ describe('createMethodBody', () => {
         'IService'
       );
 
-      const module: ProcessedModule = {
-        name: 'TestModule',
+      const module: ProcessedContainer = {
+        name: 'TestContainer',
         dependencies: [],
         bindings: [binding],
       };
@@ -130,8 +130,8 @@ describe('createMethodBody', () => {
         'IService'
       );
 
-      const module: ProcessedModule = {
-        name: 'TestModule',
+      const module: ProcessedContainer = {
+        name: 'TestContainer',
         dependencies: [],
         bindings: [repoBinding, serviceBinding],
       };
@@ -156,8 +156,8 @@ describe('createMethodBody', () => {
         'IService'
       );
 
-      const module: ProcessedModule = {
-        name: 'TestModule',
+      const module: ProcessedContainer = {
+        name: 'TestContainer',
         dependencies: [],
         bindings: [binding],
       };
@@ -185,8 +185,8 @@ describe('createMethodBody', () => {
         'IService'
       );
 
-      const module: ProcessedModule = {
-        name: 'TestModule',
+      const module: ProcessedContainer = {
+        name: 'TestContainer',
         dependencies: [],
         bindings: [repoBinding, serviceBinding],
       };
@@ -200,7 +200,10 @@ describe('createMethodBody', () => {
     });
 
     it('should resolve parameters from dependencies when not found in module bindings', () => {
-      const dependency = getProcessedDependency('TestDep', 'IDependencyModule');
+      const dependency = getProcessedDependency(
+        'TestDep',
+        'IDependencyContainer'
+      );
       const serviceBinding = getProcessedBinding(
         'serviceBinding',
         'transient',
@@ -208,8 +211,8 @@ describe('createMethodBody', () => {
         'IService'
       );
 
-      const module: ProcessedModule = {
-        name: 'TestModule',
+      const module: ProcessedContainer = {
+        name: 'TestContainer',
         dependencies: [dependency],
         bindings: [serviceBinding],
       };
@@ -230,7 +233,10 @@ describe('createMethodBody', () => {
         'IRepository'
       );
 
-      const dependency = getProcessedDependency('TestDep', 'IDependencyModule');
+      const dependency = getProcessedDependency(
+        'TestDep',
+        'IDependencyContainer'
+      );
 
       // Create a service that needs both repository and logger
       const serviceClass = implementationsFile.getClass('Service');
@@ -253,8 +259,8 @@ describe('createMethodBody', () => {
         },
       };
 
-      const module: ProcessedModule = {
-        name: 'TestModule',
+      const module: ProcessedContainer = {
+        name: 'TestContainer',
         dependencies: [dependency],
         bindings: [repoBinding, serviceBinding],
       };
@@ -277,8 +283,8 @@ describe('createMethodBody', () => {
         'IService'
       );
 
-      const module: ProcessedModule = {
-        name: 'TestModule',
+      const module: ProcessedContainer = {
+        name: 'TestContainer',
         dependencies: [],
         bindings: [serviceBinding], // Missing repository binding
       };
@@ -287,7 +293,7 @@ describe('createMethodBody', () => {
         CodegenError
       );
       expect(() => createMethodBody(module, serviceBinding)).toThrow(
-        /Module `TestModule` cannot be built:[\s\S]*Parameter `repo` of class `ServiceWithOneParam` cannot be resolved./
+        /Container `TestContainer` cannot be built:[\s\S]*Parameter `repo` of class `ServiceWithOneParam` cannot be resolved./
       );
     });
 
@@ -296,14 +302,14 @@ describe('createMethodBody', () => {
       const invalidDepsFile = project.createSourceFile(
         'invalid-deps.ts',
         `
-        export interface InvalidDependencyModule {
+        export interface InvalidDependencyContainer {
           invalidProp: string; // Not a method signature
         }
       `
       );
 
       const invalidInterface = invalidDepsFile.getInterface(
-        'InvalidDependencyModule'
+        'InvalidDependencyContainer'
       );
       if (!invalidInterface) throw new Error('Invalid interface not found');
 
@@ -319,8 +325,8 @@ describe('createMethodBody', () => {
         'IService'
       );
 
-      const module: ProcessedModule = {
-        name: 'TestModule',
+      const module: ProcessedContainer = {
+        name: 'TestContainer',
         dependencies: [invalidDependency],
         bindings: [serviceBinding],
       };
@@ -343,8 +349,8 @@ describe('createMethodBody', () => {
         'IService'
       );
 
-      const module: ProcessedModule = {
-        name: 'TestModule',
+      const module: ProcessedContainer = {
+        name: 'TestContainer',
         dependencies: [],
         bindings: [binding],
       };
@@ -364,8 +370,8 @@ describe('createMethodBody', () => {
         'IService'
       );
 
-      const module: ProcessedModule = {
-        name: 'TestModule',
+      const module: ProcessedContainer = {
+        name: 'TestContainer',
         dependencies: [],
         bindings: [binding],
       };
@@ -384,7 +390,10 @@ describe('createMethodBody', () => {
         'Repository',
         'IRepository'
       );
-      const dependency = getProcessedDependency('TestDep', 'IDependencyModule');
+      const dependency = getProcessedDependency(
+        'TestDep',
+        'IDependencyContainer'
+      );
       const serviceBinding = getProcessedBinding(
         'serviceBinding',
         'transient',
@@ -392,8 +401,8 @@ describe('createMethodBody', () => {
         'IService'
       );
 
-      const module: ProcessedModule = {
-        name: 'TestModule',
+      const module: ProcessedContainer = {
+        name: 'TestContainer',
         dependencies: [dependency],
         bindings: [localRepoBinding, serviceBinding],
       };

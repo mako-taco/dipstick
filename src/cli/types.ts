@@ -7,7 +7,7 @@ import {
   TypeLiteralNode,
 } from 'ts-morph';
 
-export interface FoundModule {
+export interface FoundContainer {
   name: string;
   filePath: string;
   dependencies?: TupleTypeNode;
@@ -54,7 +54,7 @@ export type ProcessedDependency = {
   type: Type;
 };
 
-export interface ProcessedModule {
+export interface ProcessedContainer {
   name: string;
   dependencies: ProcessedDependency[];
   bindings: ProcessedBinding[];
@@ -73,7 +73,7 @@ export type ProcessedSourceFile = {
   }[];
 }[];
 
-export interface ProcessedModuleGroupImport {
+export interface ProcessedContainerGroupImport {
   namedImports: {
     name: string;
     isTypeOnly: boolean;
@@ -81,9 +81,9 @@ export interface ProcessedModuleGroupImport {
   moduleSpecifier: string;
 }
 
-export interface ProcessedModuleGroup {
+export interface ProcessedContainerGroup {
   filePath: string;
   sourceFilePath: string;
-  imports: ProcessedModuleGroupImport[];
-  modules: ProcessedModule[];
+  imports: ProcessedContainerGroupImport[];
+  modules: ProcessedContainer[];
 }

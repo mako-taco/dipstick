@@ -1,7 +1,7 @@
 import { Project, SourceFile, SyntaxKind, TupleTypeNode } from 'ts-morph';
 import path from 'path';
-import { FoundModule } from '../../../types';
-import { foundModuleToProcessedDependencies } from './process-deps';
+import { FoundContainer } from '../../../types';
+import { foundContainerToProcessedDependencies } from './process-deps';
 
 describe('process-deps', () => {
   let project: Project;
@@ -42,47 +42,47 @@ describe('process-deps', () => {
     return tupleType;
   };
 
-  describe('foundModuleToProcessedDependencies', () => {
+  describe('foundContainerToProcessedDependencies', () => {
     it('should process single dependency', () => {
       const dependencies = getDependenciesFromTypeAlias('DepsB');
 
-      const foundModule: FoundModule = {
-        name: 'ModuleB',
+      const foundContainer: FoundContainer = {
+        name: 'ContainerB',
         filePath: path.join(__dirname, '__fixtures__/test-deps.ts'),
         dependencies,
       };
 
-      const result = foundModuleToProcessedDependencies(foundModule);
+      const result = foundContainerToProcessedDependencies(foundContainer);
 
       expect(result).toHaveLength(1);
-      expect(result[0].text).toBe('ModuleA');
+      expect(result[0].text).toBe('ContainerA');
     });
 
     it('should process multiple dependencies', () => {
       const dependencies = getDependenciesFromTypeAlias('DepsD');
 
-      const foundModule: FoundModule = {
-        name: 'ModuleD',
+      const foundContainer: FoundContainer = {
+        name: 'ContainerD',
         filePath: path.join(__dirname, '__fixtures__/test-deps.ts'),
         dependencies,
       };
 
-      const result = foundModuleToProcessedDependencies(foundModule);
+      const result = foundContainerToProcessedDependencies(foundContainer);
 
       expect(result).toHaveLength(3);
-      expect(result[0].text).toBe('ModuleA');
-      expect(result[1].text).toBe('ModuleB');
-      expect(result[2].text).toBe('ModuleC');
+      expect(result[0].text).toBe('ContainerA');
+      expect(result[1].text).toBe('ContainerB');
+      expect(result[2].text).toBe('ContainerC');
     });
 
     it('should return empty array when no dependencies exist', () => {
-      const foundModule: FoundModule = {
-        name: 'TestModule',
+      const foundContainer: FoundContainer = {
+        name: 'TestContainer',
         filePath: path.join(__dirname, '__fixtures__/test-deps.ts'),
         // No dependencies property
       };
 
-      const result = foundModuleToProcessedDependencies(foundModule);
+      const result = foundContainerToProcessedDependencies(foundContainer);
 
       expect(result).toEqual([]);
     });
@@ -90,19 +90,19 @@ describe('process-deps', () => {
     it('should preserve dependency order', () => {
       const dependencies = getDependenciesFromTypeAlias('DepsD');
 
-      const foundModule: FoundModule = {
-        name: 'ModuleD',
+      const foundContainer: FoundContainer = {
+        name: 'ContainerD',
         filePath: path.join(__dirname, '__fixtures__/test-deps.ts'),
         dependencies,
       };
 
-      const result = foundModuleToProcessedDependencies(foundModule);
+      const result = foundContainerToProcessedDependencies(foundContainer);
 
       // Verify order is preserved as defined in the type
       expect(result.map(d => d.text)).toEqual([
-        'ModuleA',
-        'ModuleB',
-        'ModuleC',
+        'ContainerA',
+        'ContainerB',
+        'ContainerC',
       ]);
     });
   });

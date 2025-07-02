@@ -7,7 +7,7 @@ import {
 
 import { ILogger } from './logger';
 import { moduleToClassDecl } from './utils/generator/module-to-class-decl';
-import { ProcessedModuleGroup } from './types';
+import { ProcessedContainerGroup } from './types';
 
 export class Generator {
   constructor(
@@ -15,7 +15,7 @@ export class Generator {
     private readonly logger: ILogger
   ) {}
 
-  public generateFile(moduleGroup: ProcessedModuleGroup): SourceFile {
+  public generateFile(moduleGroup: ProcessedContainerGroup): SourceFile {
     this.logger.info(`Generating file ${moduleGroup.filePath}`);
     const existingFile = this.project.getSourceFile(moduleGroup.filePath);
     if (existingFile) this.project.removeSourceFile(existingFile);
