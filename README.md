@@ -39,6 +39,7 @@ interface IFoo {}
 class Foo implements IFoo {}
 ...
 
+// Export a type thats assignable to `Container` for dipstick to pick it up during code generation
 export type MyContainer = Container<{
   bindings: {
     foo: Reusable<Foo, IFoo>;
@@ -62,7 +63,7 @@ export type MyContainer = Container<{
 ```
 
 ```typescript
-const container = new MyContainerImpl()
+const container = new MyContainerImpl() // MyContainerImpl is generated code
 
 const userImpl = container.userImpl() // User
 const userIface = container.userIface() // IUser
