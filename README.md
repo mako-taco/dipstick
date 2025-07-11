@@ -51,7 +51,7 @@ export type MyContainer = Container<{
 
 ### Bindings
 
-Bindings allow containers to associate an implementation with a type. All bindings take two type arguments. The first argumnent must be a class which will be instantiated by the binding. The second, optional argument is a type to return the instance as, such as an interface. Within a single container, no two bindings may return the same type alias.
+Bindings allow containers to associate an implementation with a type. All bindings take two type arguments. The first argument must be a class which will be instantiated by the binding. The second, optional argument is a type to return the instance as, such as an interface. Within a single container, no two bindings may return the same type alias.
 
 ```typescript
 export type MyContainer = Container<{
