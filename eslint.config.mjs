@@ -76,6 +76,7 @@ export default [
   {
     ignores: [
       'dist/**',
+      '__fixtures__/**',
       'node_modules/**',
       'coverage/**',
       '*.js',

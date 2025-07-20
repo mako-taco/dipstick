@@ -33,7 +33,7 @@ export type Container<
  * the binding. See {@link Bind.Reusable}, {@link Bind.Transient}, and {@link Bind.Container}
  * for more information.
  */
-type Binding<T extends B, B = T> = () => T;
+type Binding<T extends B, B = T> = () => B;
 
 /**
  * Used to customize a generated modules behavior.

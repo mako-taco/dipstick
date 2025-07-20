@@ -1,7 +1,15 @@
-import { Project, PropertySignature, SyntaxKind } from 'ts-morph';
+import {
+  ClassDeclaration,
+  ImportDeclaration,
+  InterfaceDeclaration,
+  Project,
+  PropertySignature,
+  SyntaxKind,
+  TypeAliasDeclaration,
+} from 'ts-morph';
 import { FoundContainer, ProcessedBinding } from '../../../types';
 import { CodegenError } from '../../../error';
-import { resolveTypeToClass, resolveType } from '../resolve';
+import { resolveTypeToClass, resolveType } from '../resolve/resolve';
 
 export const foundContainerToProcessedBindings = (
   module: FoundContainer,
@@ -41,18 +49,21 @@ export const foundContainerToProcessedBindings = (
         throw new CodegenError(property, ifaceTypeResult.error);
       }
 
+      const implFqn = getFqn(implTypeResult);
+      const ifaceFqn = getFqn(ifaceTypeResult);
+
       return {
         name: property.getName(),
         bindType,
         impl: {
+          name: implTypeResult.name,
           declaration: implTypeResult.resolvedType,
-          fqn: implTypeResult.resolvedType.getSymbol()!.getFullyQualifiedName(),
+          fqn: implFqn,
         },
         iface: {
+          name: ifaceTypeResult.name,
           declaration: ifaceTypeResult.resolvedType,
-          fqn: ifaceTypeResult.resolvedType
-            .getSymbol()!
-            .getFullyQualifiedName(),
+          fqn: ifaceFqn,
         },
       } as ProcessedBinding; // TODO
     }) ?? [];
@@ -85,4 +96,33 @@ const getBindingTypeFromProperty = (
         : (() => {
             throw new CodegenError(property, 'Unknown binding type');
           })();
+};
+
+const getFqn = (implTypeResult: {
+  error: null;
+  name: string;
+  resolvedType:
+    | ClassDeclaration
+    | InterfaceDeclaration
+    | TypeAliasDeclaration
+    | ImportDeclaration;
+}): string => {
+  if (implTypeResult.resolvedType.isKind(SyntaxKind.ImportDeclaration)) {
+    const moduleSrcFile =
+      implTypeResult.resolvedType.getModuleSpecifierSourceFile();
+    if (!moduleSrcFile) {
+      throw new CodegenError(
+        implTypeResult.resolvedType,
+        `Could not find module specifier source file for import declaration ${implTypeResult.name}`
+      );
+    }
+
+    const filePathNoExtensions = moduleSrcFile
+      .getFilePath()
+      .replace(/(?:\.d)?\.tsx?$/, '');
+
+    return `"${filePathNoExtensions}".${implTypeResult.name}`;
+  }
+
+  return implTypeResult.resolvedType.getSymbol()!.getFullyQualifiedName();
 };

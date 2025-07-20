@@ -1,5 +1,5 @@
 import { Project, SourceFile } from 'ts-morph';
-import { createMethodBody } from './create-method-body';
+import { createMethodBody as createMethodBodyFactory } from './create-method-body';
 import {
   ProcessedBinding,
   ProcessedContainer,
@@ -7,13 +7,17 @@ import {
 } from '../../../types';
 import { CodegenError } from '../../../error';
 import path from 'path';
+import { NoOpLogger } from '../../../logger';
 
 describe('createMethodBody', () => {
   let project: Project;
   let interfacesFile: SourceFile;
   let implementationsFile: SourceFile;
+  let createMethodBody: ReturnType<typeof createMethodBodyFactory>;
 
   beforeEach(() => {
+    createMethodBody = createMethodBodyFactory(NoOpLogger);
+
     project = new Project({
       compilerOptions: {
         target: 99, // Latest
@@ -46,10 +50,12 @@ describe('createMethodBody', () => {
       name,
       bindType,
       impl: {
+        name: className,
         declaration: implClass,
         fqn: implClass.getSymbol()!.getFullyQualifiedName(),
       },
       iface: {
+        name: interfaceName,
         declaration: iface,
         fqn: iface.getSymbol()!.getFullyQualifiedName(),
       },
@@ -250,10 +256,12 @@ describe('createMethodBody', () => {
         name: 'serviceBinding',
         bindType: 'transient',
         impl: {
+          name: 'Service',
           declaration: serviceClass,
           fqn: serviceClass.getSymbol()!.getFullyQualifiedName(),
         },
         iface: {
+          name: 'IService',
           declaration: serviceInterface,
           fqn: serviceInterface.getSymbol()!.getFullyQualifiedName(),
         },

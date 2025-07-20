@@ -4,9 +4,15 @@ import {
   ProcessedContainer,
 } from '../../types';
 
-const DEPENDENCY_MODULE_PROPERTY_NAME = '_modules';
-const STATIC_BINDINGS_PROPERTY_NAME = '_static';
-const REUSABLE_BINDINGS_CACHE_PROPERTY_NAME = '_reusable';
+const DEPENDENCY_MODULE_PROPERTY_NAME = '__modules';
+const STATIC_BINDINGS_PROPERTY_NAME = '__static';
+const REUSABLE_BINDINGS_CACHE_PROPERTY_NAME = '__reusable';
+
+export const getPropertyNameForDependencies = () =>
+  DEPENDENCY_MODULE_PROPERTY_NAME;
+
+export const getPropertyNameForStaticBindings = () =>
+  STATIC_BINDINGS_PROPERTY_NAME;
 
 export const getPropertyNameForDependency = (
   module: ProcessedContainer,
@@ -27,3 +33,6 @@ export const getPropertyNameForReusableBinding = (
 ): string => {
   return `${REUSABLE_BINDINGS_CACHE_PROPERTY_NAME}.${binding.name}`;
 };
+
+export const getPropertyNameForReusableBindings = () =>
+  REUSABLE_BINDINGS_CACHE_PROPERTY_NAME;

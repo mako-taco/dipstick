@@ -1,5 +1,6 @@
 import {
   ClassDeclaration,
+  ImportDeclaration,
   InterfaceDeclaration,
   Project,
   Symbol,
@@ -15,10 +16,12 @@ export const resolveType = (
 ):
   | {
       error: null;
+      name: string;
       resolvedType:
         | ClassDeclaration
         | InterfaceDeclaration
-        | TypeAliasDeclaration;
+        | TypeAliasDeclaration
+        | ImportDeclaration;
     }
   | { error: string } => {
   const resolution = [type.getSymbol(), type.getAliasSymbol()]
@@ -42,9 +45,10 @@ export const resolveType = (
     return { error: 'Malformed FQN' };
   }
 
-  const sourceOfType = ['ts', 'tsx']
-    .map(ext => project.getSourceFile(`${resolution.importPath}.${ext}`))
-    .find(Boolean);
+  const sourceOfType =
+    ['ts', 'tsx']
+      .map(ext => project.getSourceFile(`${resolution.importPath}.${ext}`))
+      .find(Boolean) ?? project.getSourceFile(sourceFilePath);
 
   if (!sourceOfType) {
     return {
@@ -55,7 +59,21 @@ export const resolveType = (
   const resolvedType =
     sourceOfType.getClass(resolution.name) ??
     sourceOfType.getInterface(resolution.name) ??
-    sourceOfType.getTypeAlias(resolution.name);
+    sourceOfType.getTypeAlias(resolution.name) ??
+    sourceOfType.getImportDeclarations().find(
+      // imported type can be either a default import, named import, or named
+      // import with an alias
+      decl =>
+        decl
+          .getNamedImports()
+          .find(
+            namedImport =>
+              (namedImport.getAliasNode() ?? namedImport)
+                .getSymbol()
+                ?.getName() === resolution.name
+          ) ??
+        decl.getDefaultImport()?.getSymbol()?.getName() === resolution.name
+    );
 
   if (!resolvedType) {
     return {
@@ -65,6 +83,7 @@ export const resolveType = (
 
   return {
     error: null,
+    name: resolution.name,
     resolvedType,
   };
 };
@@ -73,7 +92,9 @@ export const resolveTypeToClass = (
   type: Type,
   sourceFilePath: string,
   project: Project
-): { error: null; resolvedType: ClassDeclaration } | { error: string } => {
+):
+  | { error: null; name: string; resolvedType: ClassDeclaration }
+  | { error: string } => {
   const result = resolveType(type, sourceFilePath, project);
   if (result.error !== null) {
     return result;
@@ -81,12 +102,13 @@ export const resolveTypeToClass = (
 
   if (!result.resolvedType.isKind(SyntaxKind.ClassDeclaration)) {
     return {
-      error: `Resolved type ${result.resolvedType.getName()} is not a class`,
+      error: `Resolved type ${result.name} is not a class`,
     };
   }
 
   return {
     error: null,
+    name: result.name,
     resolvedType: result.resolvedType,
   };
 };

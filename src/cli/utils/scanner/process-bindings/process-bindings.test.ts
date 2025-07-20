@@ -58,8 +58,8 @@ describe('process-bindings', () => {
       expect(result).toHaveLength(1);
       expect(result[0].name).toBe('testService');
       expect(result[0].bindType).toBe('reusable');
-      expect(result[0].impl.declaration.getName()).toBe('TestService');
-      expect(result[0].iface.declaration.getName()).toBe('TestService');
+      expect(result[0].impl.fqn).toMatch(/test-modules"\.TestService$/);
+      expect(result[0].iface.fqn).toMatch(/test-modules"\.TestService$/);
     });
 
     it('should process transient bindings with two type arguments', () => {
@@ -76,8 +76,8 @@ describe('process-bindings', () => {
       expect(result).toHaveLength(1);
       expect(result[0].name).toBe('testService');
       expect(result[0].bindType).toBe('transient');
-      expect(result[0].impl.declaration.getName()).toBe('TestService');
-      expect(result[0].iface.declaration.getName()).toBe('ITestService');
+      expect(result[0].impl.fqn).toMatch(/test-modules"\.TestService$/);
+      expect(result[0].iface.fqn).toMatch(/test-modules"\.ITestService$/);
     });
 
     it('should process static bindings', () => {
@@ -94,8 +94,8 @@ describe('process-bindings', () => {
       expect(result).toHaveLength(1);
       expect(result[0].name).toBe('testService');
       expect(result[0].bindType).toBe('static');
-      expect(result[0].impl.declaration.getName()).toBe('ITestService');
-      expect(result[0].iface.declaration.getName()).toBe('ITestService');
+      expect(result[0].impl.fqn).toMatch(/test-modules"\.ITestService$/);
+      expect(result[0].iface.fqn).toMatch(/test-modules"\.ITestService$/);
     });
 
     it('should handle multiple bindings', () => {

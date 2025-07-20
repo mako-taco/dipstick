@@ -31,10 +31,9 @@ export class Generator {
       });
     });
 
-    const classDecls =
-      moduleGroup.modules.map<OptionalKind<ClassDeclarationStructure>>(
-        moduleToClassDecl
-      );
+    const classDecls = moduleGroup.modules.map<
+      OptionalKind<ClassDeclarationStructure>
+    >(moduleToClassDecl(this.logger));
 
     this.logger.info(`↳ Adding ${classDecls.length} classes to file`);
     classDecls.forEach(classDecl => {
