@@ -19,11 +19,13 @@
   },
   "dependencies": {
     "commander": "^11.1.0",
+    "micromatch": "^4.0.8",
     "ts-morph": "^26.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.29.0",
     "@types/jest": "^29.5.14",
+    "@types/micromatch": "^4.0.9",
     "@types/node": "^20.11.19",
     "@typescript-eslint/eslint-plugin": "^8.35.0",
     "@typescript-eslint/parser": "^8.35.0",

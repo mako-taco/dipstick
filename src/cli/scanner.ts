@@ -16,6 +16,7 @@ import {
 } from './types';
 import { foundContainerToProcessedDependencies } from './utils/scanner/process-deps/process-deps';
 import { foundContainerToProcessedBindings } from './utils/scanner/process-bindings/process-bindings';
+import { isMatch } from 'micromatch';
 
 export class Scanner {
   constructor(
@@ -32,8 +33,16 @@ export class Scanner {
     this.logger.debug(`Skipping ${location} | ${message}`);
   }
 
-  public findContainers(): ProcessedContainerGroup[] {
-    const sourceFiles = this.project.getSourceFiles();
+  public findContainers(include?: string): ProcessedContainerGroup[] {
+    this.logger.info(`Scanning for containers in ${include ?? 'all files'}`);
+    const matchesInclude = (filePath: string): boolean => {
+      return (
+        include === undefined || isMatch(filePath, include, { matchBase: true })
+      );
+    };
+    const sourceFiles = this.project
+      .getSourceFiles()
+      .filter(file => matchesInclude(file.getFilePath()));
     const foundContainers: FoundContainer[] = sourceFiles
       .flatMap(sourceFile => this.findContainersInSourceFile(sourceFile))
       .filter(m => m !== null);
