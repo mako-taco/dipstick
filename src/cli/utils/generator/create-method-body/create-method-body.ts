@@ -35,8 +35,10 @@ export const createMethodBody =
       return lines.join('\n');
     }
 
-    const className = binding.impl.declaration.getName();
-    const ctor = binding.impl.declaration.getConstructors()[0];
+    const classOrFactoryName = binding.impl.declaration.getName();
+    const ctor = binding.impl.declaration.isKind(SyntaxKind.ClassDeclaration)
+      ? binding.impl.declaration.getConstructors()[0]
+      : binding.impl.declaration;
     const ctorParams = ctor?.getParameters() ?? [];
 
     const resolvedCtorParams = ctorParams.map(param => {
@@ -105,12 +107,12 @@ export const createMethodBody =
         param,
         `Container \`${
           module.name
-        }\` cannot be built:\n\n\tParameter \`${param.getName()}\` of class \`${className}\` cannot be resolved.`
+        }\` cannot be built:\n\n\tParameter \`${param.getName()}\` of \`${classOrFactoryName}\` cannot be resolved.`
       );
     });
 
     lines.push(
-      `const result = new ${className}(${resolvedCtorParams.join(', ')});`
+      `const result = ${binding.impl.declaration.isKind(SyntaxKind.ClassDeclaration) ? 'new ' : ''}${classOrFactoryName}(${resolvedCtorParams.join(', ')});`
     );
 
     if (binding.bindType === 'reusable') {

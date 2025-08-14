@@ -93,7 +93,7 @@ describe('createMethodBody', () => {
 
       const result = createMethodBody(module, binding);
 
-      expect(result).toBe('return this._static.testBinding;');
+      expect(result).toBe('return this.__static.testBinding;');
     });
   });
 
@@ -115,9 +115,9 @@ describe('createMethodBody', () => {
       const result = createMethodBody(module, binding);
 
       expect(result).toBe(
-        'if (this._reusable.testBinding) return this._reusable.testBinding;\n' +
+        'if (this.__reusable.testBinding) return this.__reusable.testBinding;\n' +
           'const result = new ServiceWithNoParams();\n' +
-          'this._reusable.testBinding = result;\n' +
+          'this.__reusable.testBinding = result;\n' +
           'return result;'
       );
     });
@@ -145,9 +145,9 @@ describe('createMethodBody', () => {
       const result = createMethodBody(module, serviceBinding);
 
       expect(result).toBe(
-        'if (this._reusable.serviceBinding) return this._reusable.serviceBinding;\n' +
+        'if (this.__reusable.serviceBinding) return this.__reusable.serviceBinding;\n' +
           'const result = new ServiceWithOneParam(this.repoBinding());\n' +
-          'this._reusable.serviceBinding = result;\n' +
+          'this.__reusable.serviceBinding = result;\n' +
           'return result;'
       );
     });
@@ -226,7 +226,7 @@ describe('createMethodBody', () => {
       const result = createMethodBody(module, serviceBinding);
 
       expect(result).toBe(
-        'const result = new ServiceWithOneParam(this._modules[0].getRepository());\n' +
+        'const result = new ServiceWithOneParam(this.__modules[0].getRepository());\n' +
           'return result;'
       );
     });
@@ -278,7 +278,7 @@ describe('createMethodBody', () => {
       // Service constructor expects (repo: IRepository, logger: ILogger)
       // Repository should come from local binding, Logger should come from dependency
       expect(result).toContain('new Service(this.repoBinding(),');
-      expect(result).toContain('this._modules[0].getLogger()');
+      expect(result).toContain('this.__modules[0].getLogger()');
     });
   });
 

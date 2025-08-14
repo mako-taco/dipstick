@@ -1,5 +1,6 @@
 import {
   ClassDeclaration,
+  FunctionDeclaration,
   ImportDeclaration,
   InterfaceDeclaration,
   Project,
@@ -9,7 +10,7 @@ import {
 } from 'ts-morph';
 import { FoundContainer, ProcessedBinding } from '../../../types';
 import { CodegenError } from '../../../error';
-import { resolveTypeToClass, resolveType } from '../resolve/resolve';
+import { resolveTypeToDeclaration, resolveType } from '../resolve/resolve';
 
 export const foundContainerToProcessedBindings = (
   module: FoundContainer,
@@ -37,7 +38,7 @@ export const foundContainerToProcessedBindings = (
       const implTypeResult =
         bindType === 'static'
           ? resolveType(implType, module.filePath, project)
-          : resolveTypeToClass(implType, module.filePath, project);
+          : resolveTypeToDeclaration(implType, module.filePath, project);
 
       if (implTypeResult.error !== null) {
         throw new CodegenError(property, implTypeResult.error);
@@ -105,7 +106,8 @@ const getFqn = (implTypeResult: {
     | ClassDeclaration
     | InterfaceDeclaration
     | TypeAliasDeclaration
-    | ImportDeclaration;
+    | ImportDeclaration
+    | FunctionDeclaration;
 }): string => {
   if (implTypeResult.resolvedType.isKind(SyntaxKind.ImportDeclaration)) {
     const moduleSrcFile =

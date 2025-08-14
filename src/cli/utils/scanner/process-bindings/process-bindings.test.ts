@@ -98,6 +98,26 @@ describe('process-bindings', () => {
       expect(result[0].iface.fqn).toMatch(/test-modules"\.ITestService$/);
     });
 
+    it('should handle bindings with factory functions', () => {
+      const bindings = getBindingsFromTypeAlias('FunctionBindings');
+
+      const foundContainer: FoundContainer = {
+        name: 'FunctionContainer',
+        filePath: path.join(__dirname, '__fixtures__/test-modules.ts'),
+        bindings,
+      };
+
+      const result = foundContainerToProcessedBindings(foundContainer, project);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].name).toBe('testService');
+      expect(result[0].bindType).toBe('transient');
+      expect(result[0].impl.fqn).toMatch(/test-modules"\.itsAFactoryFunction$/);
+      expect(result[0].iface.fqn).toMatch(
+        /test-modules"\.itsAFactoryFunction$/
+      );
+    });
+
     it('should handle multiple bindings', () => {
       const bindings = getBindingsFromTypeAlias('MultiBindings');
 

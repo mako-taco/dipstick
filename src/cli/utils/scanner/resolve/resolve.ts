@@ -1,5 +1,6 @@
 import {
   ClassDeclaration,
+  FunctionDeclaration,
   ImportDeclaration,
   InterfaceDeclaration,
   Project,
@@ -21,6 +22,7 @@ export const resolveType = (
         | ClassDeclaration
         | InterfaceDeclaration
         | TypeAliasDeclaration
+        | FunctionDeclaration
         | ImportDeclaration;
     }
   | { error: string } => {
@@ -60,6 +62,7 @@ export const resolveType = (
     sourceOfType.getClass(resolution.name) ??
     sourceOfType.getInterface(resolution.name) ??
     sourceOfType.getTypeAlias(resolution.name) ??
+    sourceOfType.getFunction(resolution.name) ??
     sourceOfType.getImportDeclarations().find(
       // imported type can be either a default import, named import, or named
       // import with an alias
@@ -88,21 +91,28 @@ export const resolveType = (
   };
 };
 
-export const resolveTypeToClass = (
+export const resolveTypeToDeclaration = (
   type: Type,
   sourceFilePath: string,
   project: Project
 ):
-  | { error: null; name: string; resolvedType: ClassDeclaration }
+  | {
+      error: null;
+      name: string;
+      resolvedType: ClassDeclaration | FunctionDeclaration;
+    }
   | { error: string } => {
   const result = resolveType(type, sourceFilePath, project);
   if (result.error !== null) {
     return result;
   }
 
-  if (!result.resolvedType.isKind(SyntaxKind.ClassDeclaration)) {
+  if (
+    !result.resolvedType.isKind(SyntaxKind.ClassDeclaration) &&
+    !result.resolvedType.isKind(SyntaxKind.FunctionDeclaration)
+  ) {
     return {
-      error: `Resolved type ${result.name} is not a class`,
+      error: `Resolved type ${result.name} is not a class or function`,
     };
   }
 

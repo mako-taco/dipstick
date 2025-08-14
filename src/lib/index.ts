@@ -33,7 +33,7 @@ export type Container<
  * the binding. See {@link Bind.Reusable}, {@link Bind.Transient}, and {@link Bind.Container}
  * for more information.
  */
-type Binding<T extends B, B = T> = () => B;
+type Binding<T extends B | ((...args: unknown[]) => B), B = T> = () => B;
 
 /**
  * Used to customize a generated modules behavior.
@@ -61,7 +61,7 @@ export type ContainerStructure<
  * A binding that returns the same instance of `T` every time it is called. This is used
  * for singletons, or other objects that should only be created once per module.
  */
-export type Reusable<T extends B, B = T> = {
+export type Reusable<T extends B | ((...args: unknown[]) => B), B = T> = {
   __reusable?: never;
 } & Binding<T, B>;
 
@@ -69,7 +69,7 @@ export type Reusable<T extends B, B = T> = {
  * A binding that returns a new instance of `T` every time it is called. This is used for
  * objects that should be created fresh each time they are requested.
  */
-export type Transient<T extends B, B = T> = {
+export type Transient<T extends B | ((...args: unknown[]) => B), B = T> = {
   __transient?: never;
 } & Binding<T, B>;
 
@@ -78,6 +78,6 @@ export type Transient<T extends B, B = T> = {
  * for singletons, or other objects that should only be created once per module. The instance
  * of `T` is provided to the module as a constructor argument.
  */
-export type Static<T extends B, B = T> = {
+export type Static<T extends B | ((...args: unknown[]) => B), B = T> = {
   __static?: never;
 } & Binding<T, B>;

@@ -1,5 +1,6 @@
 import {
   ClassDeclaration,
+  FunctionDeclaration,
   ImportDeclaration,
   InterfaceDeclaration,
   TupleTypeNode,
@@ -21,7 +22,7 @@ export type ProcessedBinding =
       bindType: 'reusable' | 'transient';
       impl: {
         name: string;
-        declaration: ClassDeclaration;
+        declaration: ClassDeclaration | FunctionDeclaration;
         fqn: string;
       };
       iface: {

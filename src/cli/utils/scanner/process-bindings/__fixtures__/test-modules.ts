@@ -56,3 +56,11 @@ export type DuplicateInterfaceBindings = {
   testService1: Reusable<TestService, ITestService>;
   testService2: Transient<TestService, ITestService>;
 };
+
+export function itsAFactoryFunction(): number {
+  return 5;
+}
+
+export type FunctionBindings = {
+  testService: Transient<typeof itsAFactoryFunction>;
+};
