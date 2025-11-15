@@ -13,6 +13,7 @@ import {
   getPropertyNameForStaticBindings,
 } from './property-names';
 import { ILogger } from '../../logger';
+import { cleanTypeName } from './clean-type-name';
 
 export const moduleToClassDecl =
   (logger: ILogger) =>
@@ -28,11 +29,13 @@ export const moduleToClassDecl =
     );
 
     const staticBindingsType = `Readonly<{${staticBindings
-      .map(binding => `${binding.name}: ${binding.boundTo.typeText}`)
+      .map(
+        binding => `${binding.name}: ${cleanTypeName(binding.boundTo.typeText)}`
+      )
       .join('; ')}}>`;
 
     const dependencyContainersType = `readonly [${module.dependencies
-      .map(dep => dep.text)
+      .map(dep => cleanTypeName(dep.text))
       .join(', ')}]`;
 
     const optionsProperties = [
@@ -79,7 +82,7 @@ export const moduleToClassDecl =
       properties: [
         {
           name: getPropertyNameForReusableBindings(),
-          type: `{${reusableBindings.map(binding => `${binding.name}?: ${binding.boundTo.typeText}`).join(', ')}}`,
+          type: `{${reusableBindings.map(binding => `${binding.name}?: ${cleanTypeName(binding.boundTo.typeText)}`).join(', ')}}`,
           isReadonly: true,
           initializer: `{}`,
         } satisfies OptionalKind<PropertyDeclarationStructure>,
@@ -101,7 +104,7 @@ export const moduleToClassDecl =
               name: `${binding.name}`,
               isStatic: false,
               isAsync: false,
-              returnType: binding.boundTo.typeText,
+              returnType: cleanTypeName(binding.boundTo.typeText),
               parameters: [],
               statements: createMethodBody(module, binding),
             }) satisfies OptionalKind<MethodDeclarationStructure>

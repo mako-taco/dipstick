@@ -29,8 +29,8 @@ export const getStaticBinding =
     const typeText = aliasSymbol
       ? // Binding<SomeAlias>
         aliasSymbol.getName()
-      : // Binding<{hi: 5}>
-        typeArgs[0].getType().getText();
+      : // Binding<{hi: 5}> - use original source text, not expanded type
+        typeArgs[0].getText();
 
     const fqnOrLiteralTypeText = aliasSymbol
       ? getFqnForAlias(aliasSymbol, typeArgs[0].getSourceFile())
