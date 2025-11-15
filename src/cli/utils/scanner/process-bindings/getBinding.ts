@@ -81,8 +81,22 @@ export const getNonStaticBinding =
     }
 
     let implFqn: string;
+    let actualImplementation = implDeclaration;
+
     if (implDeclaration.isKind(SyntaxKind.ImportDeclaration)) {
       implFqn = getFqnForImportDeclaration(implName, implDeclaration);
+      // Follow the import to get the actual implementation
+      try {
+        const importedSourceFile = implDeclaration.getModuleSpecifierSourceFileOrThrow();
+        const actualDeclaration = importedSourceFile.getClass(implName) ??
+                                 importedSourceFile.getFunction(implName) ??
+                                 importedSourceFile.getVariableDeclaration(implName);
+        if (actualDeclaration) {
+          actualImplementation = actualDeclaration;
+        }
+      } catch (e) {
+        // If we can't follow the import, use the original declaration
+      }
     } else if (implDeclaration.isExported()) {
       implFqn = getFqn({
         name: implName,
@@ -142,7 +156,7 @@ export const getNonStaticBinding =
         usesTypeofKeyword: implTypeArg.isKind(SyntaxKind.TypeQuery),
         node: implTypeArg,
         typeText: implTypeArg.getType().getText(),
-        isClass: implDeclaration.isKind(SyntaxKind.ClassDeclaration),
+        isClass: actualImplementation.isKind(SyntaxKind.ClassDeclaration),
         parameters: getParametersForName(implName, sourceFile).map(param => {
           return {
             name: param.getName(),

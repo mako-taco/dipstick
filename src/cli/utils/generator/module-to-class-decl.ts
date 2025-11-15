@@ -67,13 +67,13 @@ export const moduleToClassDecl =
         {
           parameters,
           statements: [
-            module.dependencies.length > 0
-              ? `this.${getPropertyNameForDependencies()} = dependencyContainers`
-              : null,
-            staticBindings.length > 0
-              ? `this.${getPropertyNameForStaticBindings()} = staticBindings`
-              : null,
-          ].filter(statement => statement !== null),
+            `this.${getPropertyNameForDependencies()} = ${
+              module.dependencies.length > 0 ? 'dependencyContainers' : '[]'
+            }`,
+            `this.${getPropertyNameForStaticBindings()} = ${
+              staticBindings.length > 0 ? 'staticBindings' : '{}'
+            }`,
+          ],
         },
       ],
       properties: [

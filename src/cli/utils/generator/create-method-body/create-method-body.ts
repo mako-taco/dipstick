@@ -40,7 +40,7 @@ export const createMethodBody =
     const isClass = binding.implementedBy.isClass;
     const ctorParams = binding.implementedBy.parameters;
 
-    // For typeof bindings, extract the function name from FQN, otherwise use the type text
+    // Extract the class/function name from FQN for both typeof and regular bindings
     let classOrFactoryName: string;
     if (binding.implementedBy.usesTypeofKeyword) {
       // Extract the function name from the FQN (e.g., "/path/to/file".functionName -> functionName)
@@ -48,7 +48,11 @@ export const createMethodBody =
       const functionName = fqnParts[fqnParts.length - 1];
       classOrFactoryName = functionName;
     } else {
-      classOrFactoryName = binding.implementedBy.typeText;
+      // For regular class bindings, also extract the class name from FQN
+      // FQN format: "/path/to/file".ClassName -> ClassName
+      const fqnParts = binding.implementedBy.fqn.split('.');
+      const className = fqnParts[fqnParts.length - 1];
+      classOrFactoryName = className;
     }
 
     logger.debug(
