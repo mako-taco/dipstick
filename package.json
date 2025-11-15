@@ -1,6 +1,6 @@
 {
   "name": "dipstick",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "A dependency injection framework for TypeScript",
   "main": "dist/lib/index.js",
   "types": "dist/lib/index.d.ts",
