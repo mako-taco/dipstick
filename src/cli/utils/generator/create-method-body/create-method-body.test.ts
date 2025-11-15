@@ -1,13 +1,14 @@
-import { Project, SourceFile } from 'ts-morph';
+import { Project, SourceFile, SyntaxKind } from 'ts-morph';
 import { createMethodBody as createMethodBodyFactory } from './create-method-body';
 import {
-  ProcessedBinding,
+  Binding,
   ProcessedContainer,
   ProcessedDependency,
 } from '../../../types';
 import { CodegenError } from '../../../error';
 import path from 'path';
 import { NoOpLogger } from '../../../logger';
+import { normalizeTypeName } from '../../normalizeTypeName';
 
 describe('createMethodBody', () => {
   let project: Project;
@@ -39,27 +40,62 @@ describe('createMethodBody', () => {
     bindType: 'reusable' | 'transient' | 'static',
     className: string,
     interfaceName: string
-  ): ProcessedBinding => {
+  ): Binding => {
     const implClass = implementationsFile.getClass(className);
     const iface = interfacesFile.getInterface(interfaceName);
 
     if (!implClass) throw new Error(`Class ${className} not found`);
     if (!iface) throw new Error(`Interface ${interfaceName} not found`);
 
-    return {
-      name,
-      bindType,
-      impl: {
-        name: className,
-        declaration: implClass,
-        fqn: implClass.getSymbol()!.getFullyQualifiedName(),
-      },
-      iface: {
-        name: interfaceName,
-        declaration: iface,
-        fqn: iface.getSymbol()!.getFullyQualifiedName(),
-      },
-    };
+    if (bindType === 'static') {
+      return {
+        name,
+        bindType,
+        boundTo: {
+          node: iface.getFirstChild()!, // This is a placeholder, actual tests might need adjustment
+          typeText: interfaceName,
+          usesTypeofKeyword: false,
+          fqnOrLiteralTypeText: normalizeTypeName(
+            iface.getSymbol()!.getFullyQualifiedName(),
+            iface.getSourceFile()
+          ),
+        },
+      };
+    } else {
+      return {
+        name,
+        bindType,
+        boundTo: {
+          node: iface.getFirstChild()!, // This is a placeholder
+          typeText: interfaceName,
+          usesTypeofKeyword: false,
+          fqnOrLiteralTypeText: normalizeTypeName(
+            iface.getSymbol()!.getFullyQualifiedName(),
+            iface.getSourceFile()
+          ),
+        },
+        implementedBy: {
+          node: implClass.getFirstChild()! as any, // Placeholder TypeNode
+          typeText: className,
+          usesTypeofKeyword: false,
+          isClass: true,
+          parameters:
+            implClass
+              .getConstructors()[0]
+              ?.getParameters()
+              .map(param => ({
+                name: param.getName(),
+                node: param,
+                usesTypeofKeyword: param.isKind(SyntaxKind.TypeQuery),
+                fqnOrLiteralTypeText: normalizeTypeName(
+                  param.getType().getText(),
+                  param.getSourceFile()
+                ),
+              })) || [],
+          fqn: implClass.getSymbol()!.getFullyQualifiedName(),
+        },
+      };
+    }
   };
 
   const getProcessedDependency = (
@@ -252,18 +288,36 @@ describe('createMethodBody', () => {
         throw new Error('Required classes/interfaces not found');
       }
 
-      const serviceBinding: ProcessedBinding = {
+      const serviceBinding: Binding = {
         name: 'serviceBinding',
         bindType: 'transient',
-        impl: {
-          name: 'Service',
-          declaration: serviceClass,
-          fqn: serviceClass.getSymbol()!.getFullyQualifiedName(),
+        boundTo: {
+          node: serviceInterface.getFirstChild()!,
+          typeText: 'IService',
+          usesTypeofKeyword: false,
+          fqnOrLiteralTypeText: serviceInterface
+            .getSymbol()!
+            .getFullyQualifiedName(),
         },
-        iface: {
-          name: 'IService',
-          declaration: serviceInterface,
-          fqn: serviceInterface.getSymbol()!.getFullyQualifiedName(),
+        implementedBy: {
+          node: serviceClass.getFirstChild()! as any, // Placeholder TypeNode
+          typeText: 'Service',
+          usesTypeofKeyword: false,
+          isClass: true,
+          parameters:
+            serviceClass
+              .getConstructors()[0]
+              ?.getParameters()
+              .map(param => ({
+                name: param.getName(),
+                node: param,
+                usesTypeofKeyword: param.isKind(SyntaxKind.TypeQuery),
+                fqnOrLiteralTypeText: normalizeTypeName(
+                  param.getType().getText(),
+                  param.getSourceFile()
+                ),
+              })) || [],
+          fqn: serviceClass.getSymbol()!.getFullyQualifiedName(),
         },
       };
 
@@ -301,7 +355,7 @@ describe('createMethodBody', () => {
         CodegenError
       );
       expect(() => createMethodBody(module, serviceBinding)).toThrow(
-        /Container `TestContainer` cannot be built:[\s\S]*Parameter `repo` of class `ServiceWithOneParam` cannot be resolved./
+        /Container `TestContainer` cannot be built:[\s\S]*Parameter `repo` of `ServiceWithOneParam` cannot be resolved./
       );
     });
 

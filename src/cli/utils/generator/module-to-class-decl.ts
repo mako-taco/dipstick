@@ -4,7 +4,6 @@ import {
   OptionalKind,
   ParameterDeclarationStructure,
   PropertyDeclarationStructure,
-  SyntaxKind,
 } from 'ts-morph';
 import { ProcessedContainer } from '../../types';
 import { createMethodBody as createMethodBodyFactory } from './create-method-body/create-method-body';
@@ -29,7 +28,7 @@ export const moduleToClassDecl =
     );
 
     const staticBindingsType = `Readonly<{${staticBindings
-      .map(binding => `${binding.name}: ${binding.iface.name}`)
+      .map(binding => `${binding.name}: ${binding.boundTo.typeText}`)
       .join('; ')}}>`;
 
     const dependencyContainersType = `readonly [${module.dependencies
@@ -80,7 +79,7 @@ export const moduleToClassDecl =
       properties: [
         {
           name: getPropertyNameForReusableBindings(),
-          type: `{${reusableBindings.map(binding => `${binding.name}?: ${binding.impl.declaration.isKind(SyntaxKind.ClassDeclaration) ? binding.impl.name : `ReturnType<typeof ${binding.impl.name}>`}`).join(', ')}}`,
+          type: `{${reusableBindings.map(binding => `${binding.name}?: ${binding.boundTo.typeText}`).join(', ')}}`,
           isReadonly: true,
           initializer: `{}`,
         } satisfies OptionalKind<PropertyDeclarationStructure>,
@@ -102,7 +101,7 @@ export const moduleToClassDecl =
               name: `${binding.name}`,
               isStatic: false,
               isAsync: false,
-              returnType: binding.iface.name,
+              returnType: binding.boundTo.typeText,
               parameters: [],
               statements: createMethodBody(module, binding),
             }) satisfies OptionalKind<MethodDeclarationStructure>

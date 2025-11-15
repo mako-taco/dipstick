@@ -1,8 +1,4 @@
-import {
-  ProcessedBinding,
-  ProcessedDependency,
-  ProcessedContainer,
-} from '../../types';
+import { Binding, ProcessedDependency, ProcessedContainer } from '../../types';
 
 const DEPENDENCY_MODULE_PROPERTY_NAME = '__modules';
 const STATIC_BINDINGS_PROPERTY_NAME = '__static';
@@ -22,15 +18,11 @@ export const getPropertyNameForDependency = (
   return `${DEPENDENCY_MODULE_PROPERTY_NAME}[${idx}]`;
 };
 
-export const getPropertyNameForStaticBinding = (
-  binding: ProcessedBinding
-): string => {
+export const getPropertyNameForStaticBinding = (binding: Binding): string => {
   return `${STATIC_BINDINGS_PROPERTY_NAME}.${binding.name}`;
 };
 
-export const getPropertyNameForReusableBinding = (
-  binding: ProcessedBinding
-): string => {
+export const getPropertyNameForReusableBinding = (binding: Binding): string => {
   return `${REUSABLE_BINDINGS_CACHE_PROPERTY_NAME}.${binding.name}`;
 };
 

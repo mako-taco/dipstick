@@ -8,14 +8,14 @@ import {
 import { ILogger } from './logger';
 import {
   FoundContainer,
-  ProcessedBinding,
+  Binding,
   ProcessedDependency,
   ProcessedContainer,
   ProcessedContainerGroup,
   ProcessedContainerGroupImport,
 } from './types';
 import { foundContainerToProcessedDependencies } from './utils/scanner/process-deps/process-deps';
-import { foundContainerToProcessedBindings } from './utils/scanner/process-bindings/process-bindings';
+import { foundContainerToProcessedBindings } from './utils/scanner/process-bindings/foundContainerToProcessedBindings';
 import { isMatch } from 'micromatch';
 
 export class Scanner {
@@ -101,10 +101,7 @@ export class Scanner {
   private processContainer(module: FoundContainer): ProcessedContainer {
     const dependencies: ProcessedDependency[] =
       foundContainerToProcessedDependencies(module);
-    const bindings: ProcessedBinding[] = foundContainerToProcessedBindings(
-      module,
-      this.project
-    );
+    const bindings: Binding[] = foundContainerToProcessedBindings()(module);
 
     return {
       name: module.name,

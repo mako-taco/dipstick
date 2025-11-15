@@ -1,7 +1,8 @@
 import { SyntaxKind } from 'ts-morph';
-import { ProcessedBinding, ProcessedContainer } from '../../../types';
+import { Binding, ProcessedContainer } from '../../../types';
 
 import { CodegenError } from '../../../error';
+import { normalizeTypeName } from '../../normalizeTypeName';
 import {
   getPropertyNameForReusableBinding,
   getPropertyNameForDependency,
@@ -21,7 +22,7 @@ import { ILogger } from '../../../logger';
  */
 export const createMethodBody =
   (logger: ILogger) =>
-  (module: ProcessedContainer, binding: ProcessedBinding): string => {
+  (module: ProcessedContainer, binding: Binding): string => {
     const lines = [];
 
     if (binding.bindType === 'reusable') {
@@ -35,25 +36,40 @@ export const createMethodBody =
       return lines.join('\n');
     }
 
-    const classOrFactoryName = binding.impl.declaration.getName();
-    const ctor = binding.impl.declaration.isKind(SyntaxKind.ClassDeclaration)
-      ? binding.impl.declaration.getConstructors()[0]
-      : binding.impl.declaration;
-    const ctorParams = ctor?.getParameters() ?? [];
+    // For non-static bindings, get implementation details
+    const isClass = binding.implementedBy.isClass;
+    const ctorParams = binding.implementedBy.parameters;
 
+    // For typeof bindings, extract the function name from FQN, otherwise use the type text
+    let classOrFactoryName: string;
+    if (binding.implementedBy.usesTypeofKeyword) {
+      // Extract the function name from the FQN (e.g., "/path/to/file".functionName -> functionName)
+      const fqnParts = binding.implementedBy.fqn.split('.');
+      const functionName = fqnParts[fqnParts.length - 1];
+      classOrFactoryName = functionName;
+    } else {
+      classOrFactoryName = binding.implementedBy.typeText;
+    }
+
+    logger.debug(
+      `Possible bindings: \n\t${module.bindings
+        .map(binding => binding.boundTo.fqnOrLiteralTypeText)
+        .join('\n\t')}`
+    );
     const resolvedCtorParams = ctorParams.map(param => {
-      const paramType = param.getType();
-      const paramFqn = paramType.getSymbol()?.getFullyQualifiedName();
-      logger.debug(`↳ Resolving parameter ${param.getName()} (${paramFqn})...`);
+      logger.debug(
+        `↳ Resolving parameter ${param.name} (${param.fqnOrLiteralTypeText})...`
+      );
 
       // Resolve on this module's bindings, first
       const matchedBinding = module.bindings.find(
-        binding => binding.iface.fqn === paramFqn
+        binding =>
+          binding.boundTo.fqnOrLiteralTypeText === param.fqnOrLiteralTypeText
       );
 
       if (matchedBinding) {
         logger.debug(
-          `↳ Resolved parameter ${param.getName()} to binding ${matchedBinding.name}`
+          `↳ Resolved parameter ${param.name} to binding ${matchedBinding.name}`
         );
         return `this.${matchedBinding.name}()`;
       }
@@ -89,11 +105,18 @@ export const createMethodBody =
             );
           }
 
+          const methodReturnTypeName = methodReturnType
+            .getSymbol()
+            ?.getFullyQualifiedName();
           if (
-            methodReturnType.getSymbol()?.getFullyQualifiedName() === paramFqn
+            methodReturnTypeName &&
+            normalizeTypeName(
+              methodReturnTypeName,
+              propertyDecl.getSourceFile()
+            ) === param.fqnOrLiteralTypeText
           ) {
             logger.debug(
-              ` ↳ Resolved parameter ${param.getName()} to dependency ${dep.text}.${signature.getName()}`
+              ` ↳ Resolved parameter ${param.name} to dependency ${dep.text}.${signature.getName()}`
             );
             return `this.${getPropertyNameForDependency(
               module,
@@ -104,15 +127,15 @@ export const createMethodBody =
       }
 
       throw new CodegenError(
-        param,
+        param.node,
         `Container \`${
           module.name
-        }\` cannot be built:\n\n\tParameter \`${param.getName()}\` of \`${classOrFactoryName}\` cannot be resolved.`
+        }\` cannot be built:\n\n\tParameter \`${param.name}\` of \`${classOrFactoryName}\` cannot be resolved.`
       );
     });
 
     lines.push(
-      `const result = ${binding.impl.declaration.isKind(SyntaxKind.ClassDeclaration) ? 'new ' : ''}${classOrFactoryName}(${resolvedCtorParams.join(', ')});`
+      `const result = ${isClass ? 'new ' : ''}${classOrFactoryName}(${resolvedCtorParams.join(', ')});`
     );
 
     if (binding.bindType === 'reusable') {

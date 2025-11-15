@@ -3,10 +3,13 @@ import {
   FunctionDeclaration,
   ImportDeclaration,
   InterfaceDeclaration,
+  Node,
+  ParameterDeclaration,
   TupleTypeNode,
   Type,
   TypeAliasDeclaration,
   TypeLiteralNode,
+  TypeNode,
 } from 'ts-morph';
 
 export interface FoundContainer {
@@ -16,46 +19,41 @@ export interface FoundContainer {
   bindings?: TypeLiteralNode;
 }
 
-export type ProcessedBinding =
-  | {
+export type ProcessedBindingBase = {
+  name: string;
+  boundTo: {
+    node: TypeNode;
+    typeText: string;
+    usesTypeofKeyword: boolean;
+    fqnOrLiteralTypeText: string;
+  };
+};
+
+export type StaticBinding = ProcessedBindingBase & {
+  bindType: 'static';
+  boundTo: {
+    usesTypeofKeyword: false;
+  };
+};
+
+export type NonStaticBinding = ProcessedBindingBase & {
+  bindType: 'reusable' | 'transient';
+  implementedBy: {
+    node: TypeNode;
+    typeText: string;
+    usesTypeofKeyword: boolean;
+    isClass: boolean;
+    parameters: {
       name: string;
-      bindType: 'reusable' | 'transient';
-      impl: {
-        name: string;
-        declaration: ClassDeclaration | FunctionDeclaration;
-        fqn: string;
-      };
-      iface: {
-        name: string;
-        declaration:
-          | InterfaceDeclaration
-          | ClassDeclaration
-          | TypeAliasDeclaration;
-        fqn: string;
-      };
-    }
-  | {
-      name: string;
-      bindType: 'static';
-      impl: {
-        name: string;
-        declaration:
-          | InterfaceDeclaration
-          | ClassDeclaration
-          | TypeAliasDeclaration
-          | ImportDeclaration;
-        fqn: string;
-      };
-      iface: {
-        name: string;
-        declaration:
-          | InterfaceDeclaration
-          | ClassDeclaration
-          | TypeAliasDeclaration
-          | ImportDeclaration;
-        fqn: string;
-      };
-    };
+      node: Node;
+      usesTypeofKeyword: boolean;
+      fqnOrLiteralTypeText: string;
+    }[];
+    fqn: string;
+  };
+};
+
+export type Binding = StaticBinding | NonStaticBinding;
 
 export type ProcessedDependency = {
   text: string;
@@ -65,7 +63,7 @@ export type ProcessedDependency = {
 export interface ProcessedContainer {
   name: string;
   dependencies: ProcessedDependency[];
-  bindings: ProcessedBinding[];
+  bindings: Binding[];
 }
 
 export type ProcessedSourceFile = {

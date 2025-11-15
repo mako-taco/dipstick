@@ -26,6 +26,11 @@ export type Container<
   [K in keyof GetBindings<Structure>]: GetBindings<Structure>[K];
 };
 
+type FactoryFunction<T> = (...args: unknown[]) => T;
+type ConstructorFunction<T> = { new (...args: unknown[]): T };
+type Factory<T> = FactoryFunction<T> | ConstructorFunction<T> | T;
+type ProducedType<T> = T extends Factory<infer U> ? U : never;
+
 /**
  * Used to customize the behavior of bindings on a generated module. Bindings manifest as
  * methods on generated modules which instantiate a class of type `T`, and return it,
@@ -33,7 +38,7 @@ export type Container<
  * the binding. See {@link Bind.Reusable}, {@link Bind.Transient}, and {@link Bind.Container}
  * for more information.
  */
-type Binding<T extends B | ((...args: unknown[]) => B), B = T> = () => B;
+type Binding<T extends B | Factory<B>, B = ProducedType<T>> = () => B;
 
 /**
  * Used to customize a generated modules behavior.
@@ -61,7 +66,7 @@ export type ContainerStructure<
  * A binding that returns the same instance of `T` every time it is called. This is used
  * for singletons, or other objects that should only be created once per module.
  */
-export type Reusable<T extends B | ((...args: unknown[]) => B), B = T> = {
+export type Reusable<T extends B | Factory<B>, B = ProducedType<T>> = {
   __reusable?: never;
 } & Binding<T, B>;
 
@@ -69,7 +74,7 @@ export type Reusable<T extends B | ((...args: unknown[]) => B), B = T> = {
  * A binding that returns a new instance of `T` every time it is called. This is used for
  * objects that should be created fresh each time they are requested.
  */
-export type Transient<T extends B | ((...args: unknown[]) => B), B = T> = {
+export type Transient<T extends B | Factory<B>, B = ProducedType<T>> = {
   __transient?: never;
 } & Binding<T, B>;
 
@@ -78,6 +83,6 @@ export type Transient<T extends B | ((...args: unknown[]) => B), B = T> = {
  * for singletons, or other objects that should only be created once per module. The instance
  * of `T` is provided to the module as a constructor argument.
  */
-export type Static<T extends B | ((...args: unknown[]) => B), B = T> = {
+export type Static<B> = {
   __static?: never;
-} & Binding<T, B>;
+} & Binding<B, B>;
