@@ -26,7 +26,7 @@ export type Container<
   [K in keyof GetBindings<Structure>]: GetBindings<Structure>[K];
 };
 
-type FactoryFunction<T> = (...args: unknown[]) => T;
+type FactoryFunction<T> = (...args: any[]) => T;
 type ConstructorFunction<T> = { new (...args: unknown[]): T };
 type Factory<T> = FactoryFunction<T> | ConstructorFunction<T> | T;
 type ProducedType<T> = T extends Factory<infer U> ? U : never;
