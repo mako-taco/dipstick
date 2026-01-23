@@ -99,9 +99,16 @@ export class Scanner {
     );
   }
   private processContainer(module: FoundContainer): ProcessedContainer {
+    this.logger.debug(`[DEBUG] Processing container: ${module.name}`);
+    this.logger.debug(`[DEBUG] ↳ Getting dependencies...`);
     const dependencies: ProcessedDependency[] =
       foundContainerToProcessedDependencies(module);
-    const bindings: Binding[] = foundContainerToProcessedBindings()(module);
+    this.logger.debug(`[DEBUG] ↳ Found ${dependencies.length} dependencies`);
+    this.logger.debug(`[DEBUG] ↳ Getting bindings...`);
+    const bindings: Binding[] = foundContainerToProcessedBindings(this.logger)(
+      module
+    );
+    this.logger.debug(`[DEBUG] ↳ Found ${bindings.length} bindings`);
 
     return {
       name: module.name,

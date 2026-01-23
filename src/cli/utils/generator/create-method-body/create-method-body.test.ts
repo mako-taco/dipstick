@@ -17,7 +17,8 @@ describe('createMethodBody', () => {
   let createMethodBody: ReturnType<typeof createMethodBodyFactory>;
 
   beforeEach(() => {
-    createMethodBody = createMethodBodyFactory(NoOpLogger);
+    // Tests use type-based resolution fallback, so empty map is fine
+    createMethodBody = createMethodBodyFactory(NoOpLogger, new Map());
 
     project = new Project({
       compilerOptions: {

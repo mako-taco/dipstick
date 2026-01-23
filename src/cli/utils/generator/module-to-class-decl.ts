@@ -16,9 +16,9 @@ import { ILogger } from '../../logger';
 import { cleanTypeName } from './clean-type-name';
 
 export const moduleToClassDecl =
-  (logger: ILogger) =>
+  (logger: ILogger, allContainers: Map<string, ProcessedContainer>) =>
   (module: ProcessedContainer): OptionalKind<ClassDeclarationStructure> => {
-    const createMethodBody = createMethodBodyFactory(logger);
+    const createMethodBody = createMethodBodyFactory(logger, allContainers);
     logger.debug(`Generating class declaration for module ${module.name}...`);
     const reusableBindings = module.bindings.filter(
       binding => binding.bindType === 'reusable'

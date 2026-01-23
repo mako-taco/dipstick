@@ -2,11 +2,15 @@ import { Project, SourceFile, SyntaxKind } from 'ts-morph';
 import path from 'path';
 import { getStaticBinding, getNonStaticBinding } from './getBinding';
 import { CodegenError } from '../../../error';
+import { NoOpLogger } from '../../../logger';
+
+const mockLogger = NoOpLogger;
 
 describe('getBinding', () => {
   let project: Project;
   let bindingDeclarationsFile: SourceFile;
   let bindingTestTypesFile: SourceFile;
+  let typeAliasParametersFile: SourceFile;
 
   beforeEach(() => {
     project = new Project({
@@ -19,6 +23,9 @@ describe('getBinding', () => {
     // Load fixture files
     bindingTestTypesFile = project.addSourceFileAtPath(
       path.join(__dirname, '__fixtures__/binding-test-types.ts')
+    );
+    typeAliasParametersFile = project.addSourceFileAtPath(
+      path.join(__dirname, '__fixtures__/type-alias-parameters.ts')
     );
     bindingDeclarationsFile = project.addSourceFileAtPath(
       path.join(__dirname, '__fixtures__/binding-declarations.ts')
@@ -48,7 +55,7 @@ describe('getBinding', () => {
   };
 
   describe('getStaticBinding', () => {
-    const getStaticBindingDefault = getStaticBinding();
+    const getStaticBindingDefault = getStaticBinding(mockLogger);
 
     describe('with type aliases', () => {
       it('should create static binding for type alias', () => {
@@ -137,7 +144,10 @@ describe('getBinding', () => {
     describe('dependency injection', () => {
       it('should use custom getFqnForAlias function', () => {
         const mockGetFqnForAlias = jest.fn().mockReturnValue('mock.custom.fqn');
-        const customGetStaticBinding = getStaticBinding(mockGetFqnForAlias);
+        const customGetStaticBinding = getStaticBinding(
+          mockLogger,
+          mockGetFqnForAlias
+        );
 
         const typeArgs = getTypeArgs('StaticUserConfig');
 
@@ -153,7 +163,7 @@ describe('getBinding', () => {
   });
 
   describe('getNonStaticBinding', () => {
-    const getNonStaticBindingDefault = getNonStaticBinding();
+    const getNonStaticBindingDefault = getNonStaticBinding(mockLogger);
 
     describe('reusable bindings', () => {
       it('should create reusable binding with single type argument', () => {
@@ -209,9 +219,14 @@ describe('getBinding', () => {
           bindType: 'reusable',
           boundTo: {
             node: typeArgs[0],
-            usesTypeofKeyword: true,
-            typeText: expect.any(String),
-            fqnOrLiteralTypeText: expect.any(String),
+            // For single typeof argument, boundTo.usesTypeofKeyword is false
+            // because the bound type is expressed as ReturnType<typeof functionName>
+            usesTypeofKeyword: false,
+            // boundTo should use ReturnType<typeof functionName> syntax
+            typeText: 'ReturnType<typeof createUserService>',
+            fqnOrLiteralTypeText: expect.stringMatching(
+              /ReturnType<typeof .*createUserService>/
+            ),
           },
           implementedBy: {
             node: typeArgs[0],
@@ -277,6 +292,13 @@ describe('getBinding', () => {
 
         expect(binding.implementedBy.usesTypeofKeyword).toBe(true);
         expect(binding.implementedBy.isClass).toBe(false);
+        // boundTo should use ReturnType<typeof functionName> syntax
+        expect(binding.boundTo.typeText).toBe(
+          'ReturnType<typeof createUserService>'
+        );
+        expect(binding.boundTo.fqnOrLiteralTypeText).toMatch(
+          /ReturnType<typeof .*createUserService>/
+        );
       });
 
       it('should create transient binding with imported factory function', () => {
@@ -291,6 +313,13 @@ describe('getBinding', () => {
         expect(binding.implementedBy.usesTypeofKeyword).toBe(true);
         expect(binding.implementedBy.isClass).toBe(false);
         expect(binding.implementedBy.fqn).toMatch(/importedFactory/);
+        // boundTo should use ReturnType<typeof functionName> syntax
+        expect(binding.boundTo.typeText).toBe(
+          'ReturnType<typeof importedFactory>'
+        );
+        expect(binding.boundTo.fqnOrLiteralTypeText).toMatch(
+          /ReturnType<typeof .*importedFactory>/
+        );
       });
     });
 
@@ -357,6 +386,7 @@ describe('getBinding', () => {
           .mockReturnValue(mockDeclaration);
 
         const customGetNonStaticBinding = getNonStaticBinding(
+          mockLogger,
           mockGetDeclarationForName
         );
 
@@ -396,6 +426,7 @@ describe('getBinding', () => {
         const mockGetFqnForImportDeclaration = jest.fn();
 
         const customGetNonStaticBinding = getNonStaticBinding(
+          mockLogger,
           mockGetDeclarationForName,
           mockGetParametersForName,
           mockGetFqnForImportDeclaration
@@ -439,6 +470,7 @@ describe('getBinding', () => {
           .mockReturnValue('custom.import.fqn');
 
         const customGetNonStaticBinding = getNonStaticBinding(
+          mockLogger,
           mockGetDeclarationForName,
           mockGetParametersForName,
           mockGetFqnForImportDeclaration
@@ -457,6 +489,178 @@ describe('getBinding', () => {
           mockImportDeclaration
         );
         expect(binding.implementedBy.fqn).toBe('custom.import.fqn');
+      });
+    });
+
+    describe('type alias parameters', () => {
+      it('should preserve type alias identity for factory function parameters', () => {
+        const typeArgs = getTypeArgs('ReusableTypeAliasFactory');
+
+        const binding = getNonStaticBindingDefault({
+          name: 'databaseServiceFactory',
+          typeArgs: [typeArgs[0]],
+          bindType: 'reusable',
+        });
+
+        expect(binding.implementedBy.parameters).toHaveLength(2);
+
+        // First parameter should be DatabaseUrl, not just string
+        const connectionUrlParam = binding.implementedBy.parameters[0];
+        expect(connectionUrlParam.name).toBe('connectionUrl');
+        expect(connectionUrlParam.fqnOrLiteralTypeText).toMatch(/DatabaseUrl/);
+        expect(connectionUrlParam.fqnOrLiteralTypeText).not.toBe('string');
+
+        // Second parameter should be ApiKey, not just string
+        const apiKeyParam = binding.implementedBy.parameters[1];
+        expect(apiKeyParam.name).toBe('apiKey');
+        expect(apiKeyParam.fqnOrLiteralTypeText).toMatch(/ApiKey/);
+        expect(apiKeyParam.fqnOrLiteralTypeText).not.toBe('string');
+      });
+
+      it('should preserve type alias identity for class constructor parameters', () => {
+        const typeArgs = getTypeArgs('ReusableTypeAliasClass');
+
+        const binding = getNonStaticBindingDefault({
+          name: 'databaseService',
+          typeArgs: [typeArgs[0]],
+          bindType: 'reusable',
+        });
+
+        expect(binding.implementedBy.parameters).toHaveLength(3);
+
+        // First parameter should be DatabaseUrl
+        const connectionUrlParam = binding.implementedBy.parameters[0];
+        expect(connectionUrlParam.name).toBe('connectionUrl');
+        expect(connectionUrlParam.fqnOrLiteralTypeText).toMatch(/DatabaseUrl/);
+
+        // Second parameter should be ApiKey
+        const apiKeyParam = binding.implementedBy.parameters[1];
+        expect(apiKeyParam.name).toBe('apiKey');
+        expect(apiKeyParam.fqnOrLiteralTypeText).toMatch(/ApiKey/);
+
+        // Third parameter should be Port
+        const portParam = binding.implementedBy.parameters[2];
+        expect(portParam.name).toBe('port');
+        expect(portParam.fqnOrLiteralTypeText).toMatch(/Port/);
+      });
+
+      it('should allow matching type alias parameters to static bindings', () => {
+        // Get the static binding for DatabaseUrl
+        const staticTypeArgs = getTypeArgs('StaticDatabaseUrl');
+        const getStaticBindingDefault = getStaticBinding(mockLogger);
+        const staticBinding = getStaticBindingDefault({
+          name: 'databaseUrl',
+          typeArgs: [staticTypeArgs[0]],
+        });
+
+        // Get the factory binding with DatabaseUrl parameter
+        const factoryTypeArgs = getTypeArgs('ReusableTypeAliasFactory');
+        const factoryBinding = getNonStaticBindingDefault({
+          name: 'databaseServiceFactory',
+          typeArgs: [factoryTypeArgs[0]],
+          bindType: 'reusable',
+        });
+
+        // Both should reference DatabaseUrl as the type alias (not just "string")
+        const connectionUrlParam = factoryBinding.implementedBy.parameters[0];
+        expect(connectionUrlParam.fqnOrLiteralTypeText).toMatch(/DatabaseUrl/);
+        expect(staticBinding.boundTo.fqnOrLiteralTypeText).toMatch(/DatabaseUrl/);
+
+        // Both should reference the same source file (type-alias-parameters)
+        // Note: paths may differ slightly based on where the type is imported/used
+        expect(connectionUrlParam.fqnOrLiteralTypeText).toMatch(
+          /type-alias-parameters/
+        );
+      });
+    });
+
+    describe('imported type alias parameters', () => {
+      it('should preserve type alias identity when class imports the type from another file', () => {
+        // This tests the case where:
+        // - ApiKey is defined in imported-alias-types.ts
+        // - ImportedAliasService is defined in imported-alias-service.ts and imports ApiKey
+        // The parameter should resolve to "imported-alias-types.ts".ApiKey, not "imported-alias-service.ts".string
+        const typeArgs = getTypeArgs('ReusableImportedAliasService');
+
+        const binding = getNonStaticBindingDefault({
+          name: 'importedAliasService',
+          typeArgs: [typeArgs[0]],
+          bindType: 'reusable',
+        });
+
+        expect(binding.implementedBy.parameters).toHaveLength(2);
+
+        // First parameter should be ApiKey from imported-alias-types.ts
+        const apiKeyParam = binding.implementedBy.parameters[0];
+        expect(apiKeyParam.name).toBe('apiKey');
+        expect(apiKeyParam.fqnOrLiteralTypeText).toMatch(/ApiKey/);
+        expect(apiKeyParam.fqnOrLiteralTypeText).not.toBe('string');
+        // Should reference the original definition file, not the service file
+        expect(apiKeyParam.fqnOrLiteralTypeText).toMatch(/imported-alias-types/);
+
+        // Second parameter should be ServiceUrl from imported-alias-types.ts
+        const serviceUrlParam = binding.implementedBy.parameters[1];
+        expect(serviceUrlParam.name).toBe('serviceUrl');
+        expect(serviceUrlParam.fqnOrLiteralTypeText).toMatch(/ServiceUrl/);
+        expect(serviceUrlParam.fqnOrLiteralTypeText).not.toBe('string');
+        expect(serviceUrlParam.fqnOrLiteralTypeText).toMatch(
+          /imported-alias-types/
+        );
+      });
+
+      it('should preserve type alias identity when factory imports the type from another file', () => {
+        const typeArgs = getTypeArgs('ReusableImportedAliasFactory');
+
+        const binding = getNonStaticBindingDefault({
+          name: 'importedAliasFactory',
+          typeArgs: [typeArgs[0]],
+          bindType: 'reusable',
+        });
+
+        expect(binding.implementedBy.parameters).toHaveLength(2);
+
+        // First parameter should be ApiKey from imported-alias-types.ts
+        const apiKeyParam = binding.implementedBy.parameters[0];
+        expect(apiKeyParam.name).toBe('apiKey');
+        expect(apiKeyParam.fqnOrLiteralTypeText).toMatch(/ApiKey/);
+        expect(apiKeyParam.fqnOrLiteralTypeText).toMatch(/imported-alias-types/);
+
+        // Second parameter should be ServiceUrl from imported-alias-types.ts
+        const serviceUrlParam = binding.implementedBy.parameters[1];
+        expect(serviceUrlParam.name).toBe('serviceUrl');
+        expect(serviceUrlParam.fqnOrLiteralTypeText).toMatch(/ServiceUrl/);
+        expect(serviceUrlParam.fqnOrLiteralTypeText).toMatch(
+          /imported-alias-types/
+        );
+      });
+
+      it('should allow matching imported type alias parameters to static bindings', () => {
+        // Get the static binding for ImportedApiKey (aliased as ApiKey)
+        const staticTypeArgs = getTypeArgs('StaticImportedApiKey');
+        const getStaticBindingDefault = getStaticBinding(mockLogger);
+        const staticBinding = getStaticBindingDefault({
+          name: 'importedApiKey',
+          typeArgs: [staticTypeArgs[0]],
+        });
+
+        // Get the service binding with ApiKey parameter
+        const serviceTypeArgs = getTypeArgs('ReusableImportedAliasService');
+        const serviceBinding = getNonStaticBindingDefault({
+          name: 'importedAliasService',
+          typeArgs: [serviceTypeArgs[0]],
+          bindType: 'reusable',
+        });
+
+        // Both should reference ApiKey from imported-alias-types.ts
+        const apiKeyParam = serviceBinding.implementedBy.parameters[0];
+        expect(apiKeyParam.fqnOrLiteralTypeText).toMatch(/ApiKey/);
+        expect(staticBinding.boundTo.fqnOrLiteralTypeText).toMatch(/ApiKey/);
+
+        // Both should reference the same source file
+        expect(apiKeyParam.fqnOrLiteralTypeText).toMatch(/imported-alias-types/);
+        expect(staticBinding.boundTo.fqnOrLiteralTypeText).toMatch(
+          /imported-alias-types/
+        );
       });
     });
   });

@@ -22,6 +22,15 @@ export function normalizeTypeName(
     return '/' + relativePath.replace(/\\/g, '/'); // Normalize to forward slashes
   };
 
+  // Convert typeof import("path").TypeName to typeof "path".TypeName
+  const typeofImportMatch = typeName.match(
+    /^typeof import\("([^"]+)"\)\.([A-Za-z_][A-Za-z0-9_]*)$/
+  );
+  if (typeofImportMatch) {
+    const relativePath = getRelativePath(typeofImportMatch[1]);
+    return `typeof "${relativePath}".${typeofImportMatch[2]}`;
+  }
+
   // Convert import("path").TypeName to "path".TypeName
   const importMatch = typeName.match(
     /^import\("([^"]+)"\)\.([A-Za-z_][A-Za-z0-9_]*)$/
@@ -29,6 +38,15 @@ export function normalizeTypeName(
   if (importMatch) {
     const relativePath = getRelativePath(importMatch[1]);
     return `"${relativePath}".${importMatch[2]}`;
+  }
+
+  // typeof "path".TypeName format - normalize the path
+  const typeofQuotedMatch = typeName.match(
+    /^typeof "([^"]+)"\.([A-Za-z_][A-Za-z0-9_]*)$/
+  );
+  if (typeofQuotedMatch) {
+    const relativePath = getRelativePath(typeofQuotedMatch[1]);
+    return `typeof "${relativePath}".${typeofQuotedMatch[2]}`;
   }
 
   // Already in "path".TypeName format - normalize the path

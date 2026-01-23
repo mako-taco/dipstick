@@ -76,6 +76,49 @@ const userImpl = container.userImpl(); // User
 const userIface = container.userIface(); // IUser
 ```
 
+#### Using `typeof` with Factory Functions
+
+When you use `typeof functionName` as the first type argument with only one argument, Dipstick automatically infers the bound type as `ReturnType<typeof functionName>`. This is particularly useful for factory functions:
+
+```typescript
+// A factory function that returns a request handler
+function createUserHandler(userService: IUserService) {
+  return (req: Request, res: Response) => {
+    const users = userService.getAll();
+    res.json(users);
+  };
+}
+
+export type HandlerContainer = Container<{
+  bindings: {
+    // Bound type is automatically ReturnType<typeof createUserHandler>
+    userHandler: Reusable<typeof createUserHandler>;
+  };
+}>;
+```
+
+Other containers can then depend on `HandlerContainer` and receive the handler type:
+
+```typescript
+class App {
+  constructor(
+    // Type is ReturnType<typeof createUserHandler>
+    private readonly userHandler: ReturnType<typeof createUserHandler>
+  ) {
+    this.app.get('/users', this.userHandler);
+  }
+}
+
+export type AppContainer = Container<{
+  bindings: {
+    app: Reusable<App>;
+  };
+  dependencies: [HandlerContainer];
+}>;
+```
+
+Dipstick will automatically match the `ReturnType<typeof createUserHandler>` parameter to the `userHandler` binding from `HandlerContainer`.
+
 Bindings come in three flavors, which are described below.
 
 #### Reusable Bindings

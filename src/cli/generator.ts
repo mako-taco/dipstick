@@ -7,7 +7,7 @@ import {
 
 import { ILogger } from './logger';
 import { moduleToClassDecl } from './utils/generator/module-to-class-decl';
-import { ProcessedContainerGroup } from './types';
+import { ProcessedContainer, ProcessedContainerGroup } from './types';
 
 export class Generator {
   constructor(
@@ -15,7 +15,10 @@ export class Generator {
     private readonly logger: ILogger
   ) {}
 
-  public generateFile(moduleGroup: ProcessedContainerGroup): SourceFile {
+  public generateFile(
+    moduleGroup: ProcessedContainerGroup,
+    allContainers: Map<string, ProcessedContainer>
+  ): SourceFile {
     this.logger.info(`Generating file ${moduleGroup.filePath}`);
     const existingFile = this.project.getSourceFile(moduleGroup.filePath);
     if (existingFile) this.project.removeSourceFile(existingFile);
@@ -33,7 +36,7 @@ export class Generator {
 
     const classDecls = moduleGroup.modules.map<
       OptionalKind<ClassDeclarationStructure>
-    >(moduleToClassDecl(this.logger));
+    >(moduleToClassDecl(this.logger, allContainers));
 
     this.logger.info(`↳ Adding ${classDecls.length} classes to file`);
     classDecls.forEach(classDecl => {

@@ -21,7 +21,7 @@ import { ILogger } from '../../../logger';
  * 2. This module's dependencies bindings, in the order the dependency modules are listed in the module's `dependencies` property
  */
 export const createMethodBody =
-  (logger: ILogger) =>
+  (logger: ILogger, allContainers: Map<string, ProcessedContainer>) =>
   (module: ProcessedContainer, binding: Binding): string => {
     const lines = [];
 
@@ -79,53 +79,82 @@ export const createMethodBody =
       }
 
       for (const dep of module.dependencies) {
-        for (const prop of dep.type.getProperties()) {
-          const propertyDecl = prop.getDeclarations()[0];
+        logger.debug(`  ↳ Checking dependency ${dep.text}...`);
 
-          const signature =
-            propertyDecl.asKind(SyntaxKind.PropertySignature) ??
-            propertyDecl.asKind(SyntaxKind.MethodSignature);
-
-          if (!signature) {
-            throw new CodegenError(
-              propertyDecl,
-              `Expected a property signature for \`${
-                dep.text
-              }.${prop.getName()}\``
-            );
-          }
-
-          const methodReturnType = signature
-            .getType()
-            .getCallSignatures()[0]
-            ?.getReturnType();
-
-          if (!methodReturnType) {
-            throw new CodegenError(
-              propertyDecl,
-              `Expected a method signature with a return type for \`${
-                dep.text
-              }.${prop.getName()}\``
-            );
-          }
-
-          const methodReturnTypeName = methodReturnType
-            .getSymbol()
-            ?.getFullyQualifiedName();
-          if (
-            methodReturnTypeName &&
-            normalizeTypeName(
-              methodReturnTypeName,
-              propertyDecl.getSourceFile()
-            ) === param.fqnOrLiteralTypeText
-          ) {
+        // Use processed bindings from the dependency container
+        const depContainer = allContainers.get(dep.text);
+        if (depContainer) {
+          logger.debug(
+            `    ↳ Found processed container with ${depContainer.bindings.length} bindings`
+          );
+          for (const depBinding of depContainer.bindings) {
             logger.debug(
-              ` ↳ Resolved parameter ${param.name} to dependency ${dep.text}.${signature.getName()}`
+              `    ↳ ${dep.text}.${depBinding.name} -> ${depBinding.boundTo.fqnOrLiteralTypeText.substring(0, 60)}`
             );
-            return `this.${getPropertyNameForDependency(
-              module,
-              dep
-            )}.${signature.getName()}()`;
+            if (
+              depBinding.boundTo.fqnOrLiteralTypeText ===
+              param.fqnOrLiteralTypeText
+            ) {
+              logger.debug(
+                ` ↳ Resolved parameter ${param.name} to dependency ${dep.text}.${depBinding.name}`
+              );
+              return `this.${getPropertyNameForDependency(
+                module,
+                dep
+              )}.${depBinding.name}()`;
+            }
+          }
+        } else {
+          // Fallback to type-based resolution if processed container not found
+          logger.debug(`    ↳ Fallback to type-based resolution`);
+          for (const prop of dep.type.getProperties()) {
+            const propertyDecl = prop.getDeclarations()[0];
+
+            const signature =
+              propertyDecl.asKind(SyntaxKind.PropertySignature) ??
+              propertyDecl.asKind(SyntaxKind.MethodSignature);
+
+            if (!signature) {
+              throw new CodegenError(
+                propertyDecl,
+                `Expected a property signature for \`${
+                  dep.text
+                }.${prop.getName()}\``
+              );
+            }
+
+            const methodReturnType = signature
+              .getType()
+              .getCallSignatures()[0]
+              ?.getReturnType();
+
+            if (!methodReturnType) {
+              throw new CodegenError(
+                propertyDecl,
+                `Expected a method signature with a return type for \`${
+                  dep.text
+                }.${prop.getName()}\``
+              );
+            }
+
+            const methodReturnTypeName = methodReturnType
+              .getSymbol()
+              ?.getFullyQualifiedName();
+            if (
+              methodReturnTypeName &&
+              normalizeTypeName(
+                methodReturnTypeName,
+                propertyDecl.getSourceFile()
+              ) === param.fqnOrLiteralTypeText
+            ) {
+              logger.debug(
+                ` ↳ Resolved parameter ${param.name} to dependency ${dep.text}.${signature.getName()}`
+              );
+              return `this.${getPropertyNameForDependency(
+                module,
+                dep
+              )}.${signature.getName()}()`;
+            }
           }
         }
       }

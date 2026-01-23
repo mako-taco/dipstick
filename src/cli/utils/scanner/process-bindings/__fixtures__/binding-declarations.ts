@@ -19,6 +19,18 @@ import {
   ImportedConfig,
   IImportedService,
 } from './imported-types';
+import {
+  TypeAliasService,
+  createTypeAliasService,
+  DatabaseUrl,
+  ApiKey,
+  Port,
+} from './type-alias-parameters';
+import {
+  ImportedAliasService,
+  createImportedAliasService,
+} from './imported-alias-service';
+import { ApiKey as ImportedApiKey, ServiceUrl } from './imported-alias-types';
 
 // Static bindings - single type argument
 export type StaticUserConfig = Static<UserConfig>;
@@ -85,5 +97,22 @@ export type TestContainerBindings = {
   importedService: ImportedReusable;
 };
 
+// Type alias parameter bindings - for testing that type aliases are preserved
+export type StaticDatabaseUrl = Static<DatabaseUrl>;
+export type StaticApiKey = Static<ApiKey>;
 
+// Reusable binding with factory that uses type alias parameters
+export type ReusableTypeAliasFactory = Reusable<typeof createTypeAliasService>;
 
+// Reusable binding with class that uses type alias parameters
+export type ReusableTypeAliasClass = Reusable<TypeAliasService>;
+
+// Imported type alias tests - class and factory in separate file from type alias
+export type ReusableImportedAliasService = Reusable<ImportedAliasService>;
+export type ReusableImportedAliasFactory = Reusable<
+  typeof createImportedAliasService
+>;
+
+// Static bindings for imported type aliases
+export type StaticImportedApiKey = Static<ImportedApiKey>;
+export type StaticServiceUrl = Static<ServiceUrl>;

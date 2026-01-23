@@ -5,16 +5,22 @@ import {
   getStaticBinding as _getStaticBinding,
   getNonStaticBinding as _getNonStaticBinding,
 } from './getBinding';
+import { ILogger } from '../../../logger';
 
 export const foundContainerToProcessedBindings =
   (
-    getStaticBinding = _getStaticBinding(),
-    getNonStaticBinding = _getNonStaticBinding()
+    logger: ILogger,
+    getStaticBinding = _getStaticBinding(logger),
+    getNonStaticBinding = _getNonStaticBinding(logger)
   ) =>
   (module: FoundContainer): Binding[] => {
+    const properties = module.bindings?.getProperties() ?? [];
+    logger.debug(`[DEBUG] foundContainerToProcessedBindings: Processing ${properties.length} properties`);
     const processedBindings: Binding[] =
-      module.bindings?.getProperties().map((property): Binding => {
+      properties.map((property, idx): Binding => {
+        logger.debug(`[DEBUG] ↳ Processing property ${idx + 1}/${properties.length}: ${property.getName()}`);
         const bindType = getBindingTypeFromProperty(property);
+        logger.debug(`[DEBUG]   ↳ Binding type: ${bindType}`);
         const typeArgs = property
           .getTypeNode()
           ?.asKind(SyntaxKind.TypeReference)
@@ -37,18 +43,24 @@ export const foundContainerToProcessedBindings =
         }
 
         if (bindType === 'static') {
-          return getStaticBinding({
+          logger.debug(`[DEBUG]   ↳ Calling getStaticBinding...`);
+          const result = getStaticBinding({
             name: property.getName(),
             typeArgs,
           });
+          logger.debug(`[DEBUG]   ↳ getStaticBinding done`);
+          return result;
         } else {
-          return getNonStaticBinding({
+          logger.debug(`[DEBUG]   ↳ Calling getNonStaticBinding...`);
+          const result = getNonStaticBinding({
             name: property.getName(),
             bindType,
             typeArgs,
           });
+          logger.debug(`[DEBUG]   ↳ getNonStaticBinding done`);
+          return result;
         }
-      }) ?? [];
+      });
 
     // Prevent two bindings on the same module which return the same type
     for (let i = 1; i < processedBindings.length; i++) {
