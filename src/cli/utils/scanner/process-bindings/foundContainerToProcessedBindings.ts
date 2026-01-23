@@ -6,6 +6,20 @@ import {
   getNonStaticBinding as _getNonStaticBinding,
 } from './getBinding';
 import { ILogger } from '../../../logger';
+/**
+ * Converts a FoundContainer (parsed from source) to an array of processed Binding objects.
+ *
+ * This mainly:
+ *  - Retrieves properties from the container's 'bindings' interface/type.
+ *  - Determines the binding type (Reusable, Transient, Static) for each property.
+ *  - Extracts type arguments and validates them (must have 1 or 2 type arguments).
+ *  - Calls either getStaticBinding or getNonStaticBinding to process and normalize the binding for code generation.
+ *
+ * @param logger - Logger for verbose/debug output.
+ * @param getStaticBinding - Function returning the static binding parser (defaults to impl from getBinding).
+ * @param getNonStaticBinding - Function returning the non-static binding parser (defaults to impl from getBinding).
+ * @returns Function which takes a FoundContainer and returns an array of normalized Binding objects.
+ */
 
 export const foundContainerToProcessedBindings =
   (
@@ -15,10 +29,14 @@ export const foundContainerToProcessedBindings =
   ) =>
   (module: FoundContainer): Binding[] => {
     const properties = module.bindings?.getProperties() ?? [];
-    logger.debug(`[DEBUG] foundContainerToProcessedBindings: Processing ${properties.length} properties`);
-    const processedBindings: Binding[] =
-      properties.map((property, idx): Binding => {
-        logger.debug(`[DEBUG] ↳ Processing property ${idx + 1}/${properties.length}: ${property.getName()}`);
+    logger.debug(
+      `[DEBUG] foundContainerToProcessedBindings: Processing ${properties.length} properties`
+    );
+    const processedBindings: Binding[] = properties.map(
+      (property, idx): Binding => {
+        logger.debug(
+          `[DEBUG] ↳ Processing property ${idx + 1}/${properties.length}: ${property.getName()}`
+        );
         const bindType = getBindingTypeFromProperty(property);
         logger.debug(`[DEBUG]   ↳ Binding type: ${bindType}`);
         const typeArgs = property
@@ -60,7 +78,8 @@ export const foundContainerToProcessedBindings =
           logger.debug(`[DEBUG]   ↳ getNonStaticBinding done`);
           return result;
         }
-      });
+      }
+    );
 
     // Prevent two bindings on the same module which return the same type
     for (let i = 1; i < processedBindings.length; i++) {

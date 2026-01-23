@@ -8,6 +8,7 @@ import { getDeclarationForName as _getDeclarationForName } from '../../getDeclar
 import { getParametersForName as _getParametersForName } from '../../getParametersForName';
 import { normalizeTypeName } from '../../normalizeTypeName';
 import { ILogger } from '../../../logger';
+import { resolveParameterTypeFqn } from './type-resolvers/index';
 
 /**
  * Given a symbol, check if it represents a type alias.
@@ -58,6 +59,38 @@ const getActualTypeAliasSymbol = (
   return undefined;
 };
 
+/**
+ * Resolve the alias symbol for a type node.
+ * Handles both direct alias types and type references to aliases.
+ * Skips generic types like ReturnType<typeof X> since those are handled differently.
+ */
+const resolveAliasSymbol = (
+  typeNode: TypeNode | undefined
+): Symbol | undefined => {
+  if (!typeNode) return undefined;
+
+  // First try to get alias from the Type object
+  let aliasSymbol = typeNode.getType().getAliasSymbol();
+
+  // If that fails and the type node is a TypeReference, try to get
+  // the symbol from the type reference directly (works for simple
+  // type aliases like `type DatabaseUrl = string`)
+  // But skip this for generic types like ReturnType<typeof X> since we handle those differently
+  if (!aliasSymbol && typeNode.isKind(SyntaxKind.TypeReference)) {
+    const hasTypeArgs = typeNode.getTypeArguments().length > 0;
+    if (!hasTypeArgs) {
+      const typeRefSymbol = typeNode.getTypeName().getSymbol();
+      // Check if this symbol points to a type alias declaration
+      // (following imports if necessary)
+      if (isSymbolTypeAlias(typeRefSymbol)) {
+        aliasSymbol = getActualTypeAliasSymbol(typeRefSymbol);
+      }
+    }
+  }
+
+  return aliasSymbol;
+};
+
 export type GetBindingArgs = {
   name: string;
   typeArgs: [TypeNode, TypeNode] | [TypeNode];
@@ -75,20 +108,7 @@ export const getStaticBinding =
       );
     }
 
-    // First try to get alias from the Type object
-    let aliasSymbol = typeArgs[0].getType().getAliasSymbol();
-
-    // If that fails and the type argument is a TypeReference, try to get
-    // the symbol from the type reference directly (works for simple
-    // type aliases like `type DatabaseUrl = string`)
-    if (!aliasSymbol && typeArgs[0].isKind(SyntaxKind.TypeReference)) {
-      const typeRefSymbol = typeArgs[0].getTypeName().getSymbol();
-      // Check if this symbol points to a type alias declaration
-      // (following imports if necessary)
-      if (isSymbolTypeAlias(typeRefSymbol)) {
-        aliasSymbol = getActualTypeAliasSymbol(typeRefSymbol);
-      }
-    }
+    const aliasSymbol = resolveAliasSymbol(typeArgs[0]);
 
     const typeText = aliasSymbol
       ? // Binding<SomeAlias>
@@ -226,129 +246,18 @@ export const getNonStaticBinding =
       logger.debug(
         `[DEBUG]   ↳ Processing parameter ${idx + 1}/${parameters.length}: ${param.getName()}`
       );
-      // Check if the parameter type is a type alias (e.g., type DatabaseUrl = string)
-      // If so, preserve the alias identity instead of resolving to the underlying type
-      logger.debug(`[DEBUG]     ↳ Getting type node...`);
+
       const typeNode = param.getTypeNode();
-      logger.debug(`[DEBUG]     ↳ Type node kind: ${typeNode?.getKindName()}`);
+      const aliasSymbol = resolveAliasSymbol(typeNode);
 
-      // First try to get alias from the Type object
-      logger.debug(`[DEBUG]     ↳ Getting alias symbol from Type object...`);
-      let aliasSymbol = typeNode?.getType().getAliasSymbol();
-      logger.debug(
-        `[DEBUG]     ↳ Alias symbol: ${aliasSymbol?.getName() ?? 'none'}`
-      );
+      const { resolverName, fqnOrLiteralTypeText } = resolveParameterTypeFqn({
+        param,
+        typeNode,
+        aliasSymbol,
+        getFqnForAlias,
+      });
 
-      // If that fails and the type node is a TypeReference, try to get
-      // the symbol from the type reference directly (works for simple
-      // type aliases like `type DatabaseUrl = string`)
-      // But skip this for generic types like ReturnType<typeof X> since we handle those differently
-      if (!aliasSymbol && typeNode?.isKind(SyntaxKind.TypeReference)) {
-        const hasTypeArgs = typeNode.getTypeArguments().length > 0;
-        if (hasTypeArgs) {
-          logger.debug(
-            `[DEBUG]     ↳ TypeReference with type args, skipping alias resolution`
-          );
-        } else {
-          logger.debug(
-            `[DEBUG]     ↳ TypeReference detected, getting symbol...`
-          );
-          const typeRefSymbol = typeNode.getTypeName().getSymbol();
-          logger.debug(
-            `[DEBUG]     ↳ TypeRef symbol: ${typeRefSymbol?.getName() ?? 'none'}`
-          );
-          // Check if this symbol points to a type alias declaration
-          // (following imports if necessary)
-          logger.debug(`[DEBUG]     ↳ Checking if symbol is type alias...`);
-          if (isSymbolTypeAlias(typeRefSymbol)) {
-            logger.debug(
-              `[DEBUG]     ↳ Is type alias, getting actual symbol...`
-            );
-            aliasSymbol = getActualTypeAliasSymbol(typeRefSymbol);
-          }
-          logger.debug(`[DEBUG]     ↳ Type alias check complete`);
-        }
-      }
-
-      let fqnOrLiteralTypeText: string;
-      if (aliasSymbol) {
-        logger.debug(
-          `[DEBUG]     ↳ Using alias symbol path for: ${aliasSymbol.getName()}`
-        );
-        // Check if this is a built-in TypeScript type (like ReturnType, Partial, etc.)
-        // These live in lib.*.d.ts files and we should not try to resolve them
-        const aliasDeclarations = aliasSymbol.getDeclarations();
-        const firstDeclSourceFile = aliasDeclarations[0]?.getSourceFile();
-        const declPath = firstDeclSourceFile?.getFilePath() ?? '';
-        logger.debug(`[DEBUG]     ↳ Alias decl path: ${declPath}`);
-        const isBuiltIn =
-          !firstDeclSourceFile ||
-          declPath.includes('/node_modules/typescript/') ||
-          declPath.includes('/lib.') ||
-          declPath.endsWith('.d.ts') ||
-          firstDeclSourceFile.isInNodeModules();
-
-        if (isBuiltIn) {
-          logger.debug(`[DEBUG]     ↳ Built-in type detected, using type text`);
-          // For built-in types, just use the resolved type text
-          const typeText = param.getType().getText();
-          logger.debug(
-            `[DEBUG]     ↳ Type text: ${typeText.substring(0, 100)}`
-          );
-          fqnOrLiteralTypeText = normalizeTypeName(
-            typeText,
-            param.getSourceFile()
-          );
-        } else {
-          logger.debug(`[DEBUG]     ↳ User-defined type alias`);
-          // Parameter uses a user-defined type alias - preserve the alias identity
-          // Use the alias symbol's declaration source file, not the parameter's source file
-          const aliasSourceFile =
-            aliasDeclarations[0]?.getSourceFile() ?? param.getSourceFile();
-          fqnOrLiteralTypeText = normalizeTypeName(
-            getFqnForAlias(aliasSymbol, aliasSourceFile),
-            param.getSourceFile()
-          );
-        }
-      } else {
-        // Fallback - check if type node has generic type args (like ReturnType<typeof X>)
-        // If so, use the type node text to preserve the structure
-        if (
-          typeNode?.isKind(SyntaxKind.TypeReference) &&
-          typeNode.getTypeArguments().length > 0
-        ) {
-          logger.debug(
-            `[DEBUG]     ↳ Generic type detected, using type node text...`
-          );
-          // Use the alias type text which preserves ReturnType<typeof X> structure
-          const aliasTypeText = typeNode.getType().getAliasTypeArguments();
-          const innerTypeArg = typeNode.getTypeArguments()[0];
-          const innerText = innerTypeArg?.getType().getText() ?? '';
-          logger.debug(`[DEBUG]     ↳ Inner type text: ${innerText}`);
-
-          // Reconstruct with FQN: ReturnType<typeof "/path".funcName>
-          const outerTypeName = typeNode.getTypeName().getText();
-          const innerTypeText = normalizeTypeName(
-            innerText,
-            param.getSourceFile()
-          );
-          fqnOrLiteralTypeText = `${outerTypeName}<${innerTypeText}>`;
-          logger.debug(
-            `[DEBUG]     ↳ Reconstructed: ${fqnOrLiteralTypeText.substring(0, 100)}`
-          );
-        } else {
-          // Simple type - use resolved type text
-          logger.debug(`[DEBUG]     ↳ Fallback: getting type text...`);
-          const typeText = param.getType().getText();
-          logger.debug(
-            `[DEBUG]     ↳ Type text: ${typeText.substring(0, 100)}`
-          );
-          fqnOrLiteralTypeText = normalizeTypeName(
-            typeText,
-            param.getSourceFile()
-          );
-        }
-      }
+      logger.debug(`[DEBUG]     ↳ Resolved by: ${resolverName}`);
       logger.debug(
         `[DEBUG]     ↳ fqnOrLiteralTypeText: ${fqnOrLiteralTypeText.substring(0, 100)}`
       );

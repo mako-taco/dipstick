@@ -10,7 +10,6 @@ describe('getBinding', () => {
   let project: Project;
   let bindingDeclarationsFile: SourceFile;
   let bindingTestTypesFile: SourceFile;
-  let typeAliasParametersFile: SourceFile;
 
   beforeEach(() => {
     project = new Project({
@@ -23,9 +22,6 @@ describe('getBinding', () => {
     // Load fixture files
     bindingTestTypesFile = project.addSourceFileAtPath(
       path.join(__dirname, '__fixtures__/binding-test-types.ts')
-    );
-    typeAliasParametersFile = project.addSourceFileAtPath(
-      path.join(__dirname, '__fixtures__/type-alias-parameters.ts')
     );
     bindingDeclarationsFile = project.addSourceFileAtPath(
       path.join(__dirname, '__fixtures__/binding-declarations.ts')
@@ -564,7 +560,9 @@ describe('getBinding', () => {
         // Both should reference DatabaseUrl as the type alias (not just "string")
         const connectionUrlParam = factoryBinding.implementedBy.parameters[0];
         expect(connectionUrlParam.fqnOrLiteralTypeText).toMatch(/DatabaseUrl/);
-        expect(staticBinding.boundTo.fqnOrLiteralTypeText).toMatch(/DatabaseUrl/);
+        expect(staticBinding.boundTo.fqnOrLiteralTypeText).toMatch(
+          /DatabaseUrl/
+        );
 
         // Both should reference the same source file (type-alias-parameters)
         // Note: paths may differ slightly based on where the type is imported/used
@@ -596,7 +594,9 @@ describe('getBinding', () => {
         expect(apiKeyParam.fqnOrLiteralTypeText).toMatch(/ApiKey/);
         expect(apiKeyParam.fqnOrLiteralTypeText).not.toBe('string');
         // Should reference the original definition file, not the service file
-        expect(apiKeyParam.fqnOrLiteralTypeText).toMatch(/imported-alias-types/);
+        expect(apiKeyParam.fqnOrLiteralTypeText).toMatch(
+          /imported-alias-types/
+        );
 
         // Second parameter should be ServiceUrl from imported-alias-types.ts
         const serviceUrlParam = binding.implementedBy.parameters[1];
@@ -623,7 +623,9 @@ describe('getBinding', () => {
         const apiKeyParam = binding.implementedBy.parameters[0];
         expect(apiKeyParam.name).toBe('apiKey');
         expect(apiKeyParam.fqnOrLiteralTypeText).toMatch(/ApiKey/);
-        expect(apiKeyParam.fqnOrLiteralTypeText).toMatch(/imported-alias-types/);
+        expect(apiKeyParam.fqnOrLiteralTypeText).toMatch(
+          /imported-alias-types/
+        );
 
         // Second parameter should be ServiceUrl from imported-alias-types.ts
         const serviceUrlParam = binding.implementedBy.parameters[1];
@@ -657,7 +659,9 @@ describe('getBinding', () => {
         expect(staticBinding.boundTo.fqnOrLiteralTypeText).toMatch(/ApiKey/);
 
         // Both should reference the same source file
-        expect(apiKeyParam.fqnOrLiteralTypeText).toMatch(/imported-alias-types/);
+        expect(apiKeyParam.fqnOrLiteralTypeText).toMatch(
+          /imported-alias-types/
+        );
         expect(staticBinding.boundTo.fqnOrLiteralTypeText).toMatch(
           /imported-alias-types/
         );
