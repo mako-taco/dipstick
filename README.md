@@ -56,6 +56,8 @@ const userService = container.userService();
 await userService.getUser('123');
 ```
 
+Check out a TODO app using dipstick [here](https://github.com/mako-taco/dipstick-todo-app).
+
 ## Core Concepts
 
 ### Containers
