@@ -25,6 +25,37 @@ npm install dipstick
 
 Dipstick uses TypeScript's type system and code generation to create dependency injection containers. The framework supports both class instantiation and factory functions as implementations, making it flexible for various architectural patterns. The framework is designed to be type-safe and easy to use, with a focus on maintainability and developer experience.
 
+**Step 1:** Define a container in real typescript types
+
+```typescript
+import { Container, Reusable, Transient } from 'dipstick';
+
+export type AppContainer = Container<{
+  bindings: {
+    database: Reusable<Database>;
+    logger: Reusable<Logger, ILogger>;
+    userService: Transient<UserService, IUserService>;
+  };
+}>;
+```
+
+**Step 2:** Run code generation to implement your container
+
+```sh
+npx dipstick generate ./path/to/tsconfig.json
+```
+
+**Step 3:** Instantiate your generated container
+
+```typescript
+// Instantiate your container
+const container = new AppContainerImpl();
+
+// Create an IUserService, automatically resolving dependencies
+const userService = container.userService();
+await userService.getUser('123');
+```
+
 ## Core Concepts
 
 ### Containers
@@ -33,15 +64,6 @@ Containers are the core building blocks of Dipstick. They allow you to bind impl
 
 ```typescript
 import { Container, Reusable, Transient } from 'dipstick';
-
-interface IFoo {}
-class Foo implements IFoo {}
-interface IBaz {}
-class Baz implements IBaz {}
-
-function createBaz(foo: IFoo): IBaz {
-  return new Baz(foo);
-}
 
 // Export a type thats assignable to `Container` for dipstick to pick it up during code generation
 export type MyContainer = Container<{
